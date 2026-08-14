@@ -1,0 +1,22 @@
+/* ─────────────────────────────────────────────────────────────
+   Status Pill Component
+   ───────────────────────────────────────────────────────────── */
+
+.status-pill {
+  padding-left: var(--space-1-5) !important;
+}
+
+.status-pill__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  margin-right: var(--space-1-5);
+  flex-shrink: 0;
+}
+
+.status-pill__dot--primary { background-color: var(--color-accent); }
+.status-pill__dot--secondary { background-color: var(--color-text-tertiary); }
+.status-pill__dot--success { background-color: var(--color-success); }
+.status-pill__dot--warning { background-color: var(--color-warning); }
+.status-pill__dot--error { background-color: var(--color-error); }
+.status-pill__dot--info { background-color: var(--color-info); }

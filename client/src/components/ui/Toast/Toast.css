@@ -1,0 +1,111 @@
+/* ─────────────────────────────────────────────────────────────
+   Toast Component
+   ───────────────────────────────────────────────────────────── */
+
+.toast-container {
+  position: fixed;
+  bottom: var(--space-6);
+  right: var(--space-6);
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  pointer-events: none; /* Let clicks pass through container */
+}
+
+/* On small screens, center toasts at bottom */
+@media (max-width: 640px) {
+  .toast-container {
+    bottom: var(--space-4);
+    right: var(--space-4);
+    left: var(--space-4);
+    align-items: stretch;
+  }
+}
+
+.toast {
+  pointer-events: auto; /* Enable clicks on individual toasts */
+  display: flex;
+  align-items: flex-start;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-3);
+  width: 380px;
+  max-width: 100%;
+  animation: toast-slide-in 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  overflow: hidden;
+  position: relative;
+}
+
+@media (max-width: 640px) {
+  .toast {
+    width: 100%;
+  }
+}
+
+/* ── Content ──────────────────────────────────────────────── */
+.toast__icon-wrapper {
+  flex-shrink: 0;
+  margin-right: var(--space-3);
+  padding-top: 2px;
+}
+
+.toast__icon {
+  width: 20px;
+  height: 20px;
+}
+
+.toast__icon--success { color: var(--color-success); }
+.toast__icon--error { color: var(--color-error); }
+.toast__icon--warning { color: var(--color-warning); }
+.toast__icon--info { color: var(--color-info); }
+
+.toast__content {
+  flex: 1;
+  min-width: 0; /* Enable text truncation if needed */
+}
+
+.toast__title {
+  margin: 0 0 var(--space-1) 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.toast__description {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--leading-snug);
+}
+
+.toast__close {
+  flex-shrink: 0;
+  margin-left: var(--space-2);
+  margin-top: -4px;
+  margin-right: -4px;
+  width: 28px;
+  height: 28px;
+  color: var(--color-text-tertiary);
+}
+
+.toast__close:hover {
+  background-color: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+
+/* ── Animations ───────────────────────────────────────────── */
+@keyframes toast-slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Handle fading out (implemented in React by unmounting, but we could add exit animations later) */

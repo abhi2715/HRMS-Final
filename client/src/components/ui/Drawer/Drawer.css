@@ -1,0 +1,96 @@
+/* ─────────────────────────────────────────────────────────────
+   Drawer Component
+   ───────────────────────────────────────────────────────────── */
+
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  background-color: rgba(17, 19, 24, 0.4);
+  backdrop-filter: blur(4px);
+  animation: overlay-fade-in var(--transition-normal);
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-2xl);
+  display: flex;
+  flex-direction: column;
+  z-index: calc(var(--z-modal) + 1);
+  overflow: hidden;
+}
+
+/* ── Positions ────────────────────────────────────────────── */
+.drawer--right {
+  right: 0;
+  animation: drawer-slide-left var(--transition-normal);
+}
+
+.drawer--left {
+  left: 0;
+  animation: drawer-slide-right var(--transition-normal);
+}
+
+/* ── Sizes ────────────────────────────────────────────────── */
+.drawer--sm { width: 320px; }
+.drawer--md { width: 400px; }
+.drawer--lg { width: 600px; }
+.drawer--xl { width: 800px; }
+.drawer--full { width: 100vw; }
+
+/* Handle mobile screen constraints */
+@media (max-width: 640px) {
+  .drawer--sm, .drawer--md, .drawer--lg, .drawer--xl {
+    width: 100%;
+  }
+}
+
+/* ── Layout ───────────────────────────────────────────────── */
+.drawer__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.drawer__title {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.drawer__close-btn {
+  margin-right: calc(var(--space-2) * -1);
+}
+
+.drawer__body {
+  padding: var(--space-6);
+  overflow-y: auto;
+  flex: 1;
+}
+
+.drawer__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-6);
+  border-top: 1px solid var(--color-border-subtle);
+  background-color: var(--color-bg-subtle);
+}
+
+/* ── Animations ───────────────────────────────────────────── */
+@keyframes drawer-slide-left {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes drawer-slide-right {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}

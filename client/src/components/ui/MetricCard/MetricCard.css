@@ -1,0 +1,82 @@
+/* ─────────────────────────────────────────────────────────────
+   Metric Card Component
+   ───────────────────────────────────────────────────────────── */
+
+.metric-card {
+  height: 100%;
+}
+
+.metric-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+.metric-card__title {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.metric-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-subtle);
+  color: var(--color-text-tertiary);
+}
+
+.metric-card__icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.metric-card__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.metric-card__value {
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+}
+
+.metric-card__trend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+}
+
+.metric-card__trend-value {
+  font-weight: var(--weight-semibold);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.metric-card__trend-label {
+  color: var(--color-text-tertiary);
+}
+
+/* Trend Colors */
+.metric-card__trend--positive .metric-card__trend-value {
+  color: var(--color-success-text);
+}
+
+.metric-card__trend--negative .metric-card__trend-value {
+  color: var(--color-error-text);
+}
+
+.metric-card__trend--neutral .metric-card__trend-value {
+  color: var(--color-text-secondary);
+}

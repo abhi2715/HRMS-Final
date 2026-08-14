@@ -1,0 +1,177 @@
+.org-hierarchy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.org-level {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.org-level__title {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid var(--color-border-subtle);
+  padding-bottom: var(--space-2);
+  margin: 0;
+}
+
+.org-cards {
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.org-card {
+  width: 300px;
+}
+
+.org-card__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.org-card__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-accent-subtle);
+  color: var(--color-accent-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.org-card__name {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.org-card__role {
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+}
+
+/* Teams Grid */
+.org-teams-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--space-6);
+}
+
+.org-team-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.org-team-card__header {
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border-subtle);
+  margin-bottom: var(--space-4);
+}
+
+.org-team-card__name {
+  margin: 0 0 var(--space-3) 0;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+}
+
+.org-team-card__manager {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background-color: var(--color-bg-subtle);
+  border-radius: var(--radius-md);
+}
+
+.org-team-card__manager-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary);
+}
+
+.org-team-card__manager-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.org-team-card__manager-name {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+  line-height: 1;
+}
+
+.org-team-card__manager-role {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+}
+
+.org-team-card__no-manager {
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+  font-style: italic;
+}
+
+.org-team-card__members {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.org-team-card__members-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-3);
+}
+
+.org-team-card__members-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.org-team-card__member {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--text-sm);
+  padding: var(--space-1) 0;
+}
+
+.org-team-card__member-name {
+  color: var(--color-text-primary);
+}
+
+.org-team-card__member-title {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+}
+
+.org-team-card__member--empty {
+  color: var(--color-text-placeholder);
+  font-style: italic;
+  justify-content: flex-start;
+}

@@ -1,0 +1,29 @@
+/* ─────────────────────────────────────────────────────────────
+   Select Component (Overrides Input base styles)
+   ───────────────────────────────────────────────────────────── */
+
+.select {
+  appearance: none; /* Hide default native arrow */
+  padding-right: calc(var(--space-3) * 2 + 18px); /* Make room for custom icon */
+  cursor: pointer;
+}
+
+.select:invalid,
+.select option[value=""][disabled] {
+  color: var(--color-text-placeholder);
+}
+
+.select__icon {
+  position: absolute;
+  right: var(--space-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-tertiary);
+  pointer-events: none; /* Let clicks pass through to the select element */
+}
+
+/* Fix for disabled select icon */
+.input--disabled ~ .select__icon {
+  opacity: 0.6;
+}

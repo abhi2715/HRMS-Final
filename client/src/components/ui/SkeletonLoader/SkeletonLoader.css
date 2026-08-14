@@ -1,0 +1,40 @@
+/* ─────────────────────────────────────────────────────────────
+   Skeleton Loader Component
+   ───────────────────────────────────────────────────────────── */
+
+.skeleton {
+  display: block;
+  background-color: var(--color-border-subtle);
+  animation: skeleton-pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* ── Variants ─────────────────────────────────────────────── */
+.skeleton--text {
+  border-radius: var(--radius-sm);
+  height: 1em;
+  margin-top: 0;
+  margin-bottom: 0;
+  transform-origin: 0 50%;
+}
+
+/* A common pattern for text skeletons is a slightly smaller height than line height */
+.skeleton--text:empty::before {
+  content: "\00a0";
+}
+
+.skeleton--circular {
+  border-radius: var(--radius-full);
+}
+
+.skeleton--rectangular {
+  border-radius: var(--radius-md);
+}
