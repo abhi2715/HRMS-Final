@@ -59,7 +59,8 @@ export default function MyDailyProgressPage() {
       } else {
         setEditMode(true);
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error(error);
       toast.error('Failed to load progress history');
     } finally {
       setLoading(false);

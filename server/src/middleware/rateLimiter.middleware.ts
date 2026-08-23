@@ -1,35 +1,29 @@
 import rateLimit from 'express-rate-limit';
-import { env } from '../config/env';
 
-/**
- * Rate limiting middleware.
- *
- * Different limiters for different route groups.
- * More restrictive for auth endpoints to prevent brute force.
- */
+const isTest = process.env.NODE_ENV === 'test';
 
-// General API rate limiter
+// Global API Limiter: 100 requests per 15 minutes per IP
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: env.NODE_ENV === 'production' ? 100 : 1000, // generous in dev
+  max: isTest ? 0 : 100, // Disable in tests (0 means unlimited if a bypass function isn't used, but actually we should just set skip)
+  skip: () => isTest,
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
   message: {
     success: false,
-    message: 'Too many requests. Please try again later.',
-    error: { code: 'RATE_LIMIT_EXCEEDED' },
+    message: 'Too many requests from this IP, please try again after 15 minutes',
   },
-  standardHeaders: true,
-  legacyHeaders: false,
 });
 
-// Strict limiter for authentication endpoints
+// Auth API Limiter: 10 requests per 15 minutes per IP (Brute-force protection)
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: env.NODE_ENV === 'production' ? 10 : 100,
-  message: {
-    success: false,
-    message: 'Too many authentication attempts. Please try again later.',
-    error: { code: 'RATE_LIMIT_EXCEEDED' },
-  },
+  max: isTest ? 0 : 10, // Limit each IP to 10 requests per `window`
+  skip: () => isTest,
   standardHeaders: true,
   legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many login attempts from this IP, please try again after 15 minutes',
+  },
 });

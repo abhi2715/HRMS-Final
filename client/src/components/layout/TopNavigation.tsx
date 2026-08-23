@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Menu } from 'lucide-react';
 import { NotificationBell } from '../notifications/NotificationBell';
 import { IconButton } from '../ui/Button/IconButton';
 import { Dropdown } from '../ui/Dropdown/Dropdown';
+import { CommandPalette } from '../ui/CommandPalette';
 import { useAuth } from '../../hooks/useAuth';
 import './TopNavigation.css';
 
@@ -12,6 +13,18 @@ export interface TopNavigationProps {
 
 export const TopNavigation: React.FC<TopNavigationProps> = ({ onMenuClick }) => {
   const { user, logout } = useAuth();
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setIsSearchOpen((open) => !open);
+      }
+    };
+    document.addEventListener('keydown', down);
+    return () => document.removeEventListener('keydown', down);
+  }, []);
 
   const initials = user
     ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase()
@@ -44,7 +57,12 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({ onMenuClick }) => 
             onClick={onMenuClick}
           />
         )}
-        <div className="topnav__search-trigger" role="button" tabIndex={0}>
+        <div 
+          className="topnav__search-trigger" 
+          role="button" 
+          tabIndex={0}
+          onClick={() => setIsSearchOpen(true)}
+        >
           <Search size={16} />
           <span>Search...</span>
           <kbd className="topnav__kbd">⌘K</kbd>
@@ -64,6 +82,7 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({ onMenuClick }) => 
           items={userMenuItems}
         />
       </div>
+      <CommandPalette isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </header>
   );
 };

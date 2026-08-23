@@ -3,7 +3,8 @@ import Task from '../models/Task.model';
 import User from '../models/User.model';
 import { logAudit } from '../services/audit.service';
 import { AuditAction } from '../models/AuditLog.model';
-import { UserRole, TaskStatus } from '../../../shared/types/enums';
+import { UserRole, TaskStatus, NotificationType } from '../../../shared/types/enums';
+import { notificationService } from '../services/notification.service';
 
 // Valid state transitions
 const validTransitions: Record<TaskStatus, TaskStatus[]> = {
@@ -141,6 +142,9 @@ export const createTask = async (req: Request, res: Response) => {
     if (parentTask) {
       const parent = await Task.findById(parentTask);
       if (!parent) return res.status(400).json({ message: 'Parent task not found' });
+      if (parent.status === TaskStatus.CANCELLED || parent.status === TaskStatus.COMPLETED) {
+        return res.status(400).json({ message: 'Cannot add subtasks to a completed or cancelled task' });
+      }
     }
 
     const initialStatus = status || TaskStatus.BACKLOG;
@@ -170,11 +174,10 @@ export const createTask = async (req: Request, res: Response) => {
 
     await logAudit({
       action: AuditAction.TASK_CREATED,
-      performedBy: userId,
-      targetUser: assignedTo,
-      targetTask: newTask._id,
-      targetTeam: newTask.team,
-      details: { title, priority: newTask.priority },
+      actor: userId,
+      entity: 'Task',
+      entityId: newTask._id,
+      metadata: { title, priority: newTask.priority },
     });
 
     const populated = await Task.findById(newTask._id)
@@ -182,6 +185,18 @@ export const createTask = async (req: Request, res: Response) => {
       .populate('assigner', 'firstName lastName email role')
       .populate('assignedTo', 'firstName lastName email role')
       .populate('team', 'name');
+
+    // Notify assignee about the new task
+    if (assignedTo !== userId) {
+      notificationService.sendNotification({
+        recipientId: assignedTo,
+        title: 'New Task Assigned',
+        message: `You have been assigned a new task: "${title}"`,
+        type: NotificationType.TASK,
+        relatedEntityId: newTask._id.toString(),
+        entityModel: 'Task',
+      });
+    }
 
     res.status(201).json(populated);
   } catch (error: any) {
@@ -197,6 +212,23 @@ export const updateTask = async (req: Request, res: Response) => {
 
     const task = await Task.findById(taskId);
     if (!task) return res.status(404).json({ message: 'Task not found' });
+
+    // Security Audit: IDOR Protection
+    const leadUser = await User.findById(userId);
+    if (req.user!.role === UserRole.EMPLOYEE) {
+      if (task.assignedTo.toString() !== userId) {
+        return res.status(403).json({ message: 'Employees can only modify their own tasks' });
+      }
+    } else if (req.user!.role === UserRole.TEAM_LEAD) {
+      if (
+        task.createdBy.toString() !== userId &&
+        task.assigner?.toString() !== userId &&
+        task.assignedTo.toString() !== userId &&
+        task.team?.toString() !== leadUser?.team?.toString()
+      ) {
+        return res.status(403).json({ message: 'Team Leads can only modify tasks within their team' });
+      }
+    }
 
     const changes: Record<string, any> = {};
 
@@ -239,11 +271,24 @@ export const updateTask = async (req: Request, res: Response) => {
 
       await logAudit({
         action: AuditAction.TASK_STATUS_CHANGED,
-        performedBy: userId,
-        targetTask: task._id,
-        targetUser: task.assignedTo,
-        details: changes,
+        actor: userId,
+        entity: 'Task',
+        entityId: task._id,
+        metadata: changes,
       });
+
+      // Notify the task creator/assigner about status change
+      const notifyTarget = task.assigner?.toString() || task.createdBy.toString();
+      if (notifyTarget !== userId) {
+        notificationService.sendNotification({
+          recipientId: notifyTarget,
+          title: 'Task Status Updated',
+          message: `Task "${task.title}" status changed from ${changes.oldStatus} to ${changes.newStatus}`,
+          type: NotificationType.TASK,
+          relatedEntityId: task._id.toString(),
+          entityModel: 'Task',
+        });
+      }
     }
 
     if (assignedTo !== undefined && assignedTo !== task.assignedTo.toString()) {
@@ -258,10 +303,10 @@ export const updateTask = async (req: Request, res: Response) => {
 
       await logAudit({
         action: AuditAction.TASK_REASSIGNED,
-        performedBy: userId,
-        targetTask: task._id,
-        targetUser: assignedTo,
-        details: {
+        actor: userId,
+        entity: 'Task',
+        entityId: task._id,
+        metadata: {
           oldAssignee: task.assignedTo.toString(),
           newAssignee: assignedTo,
         },
@@ -269,6 +314,16 @@ export const updateTask = async (req: Request, res: Response) => {
 
       task.assignedTo = assignedTo;
       task.assigner = userId as any;
+
+      // Notify new assignee about task reassignment
+      notificationService.sendNotification({
+        recipientId: assignedTo,
+        title: 'Task Reassigned to You',
+        message: `You have been assigned the task: "${task.title}"`,
+        type: NotificationType.TASK,
+        relatedEntityId: task._id.toString(),
+        entityModel: 'Task',
+      });
     }
 
     await task.save();
@@ -276,9 +331,10 @@ export const updateTask = async (req: Request, res: Response) => {
     if (Object.keys(changes).length > 0 && !changes.oldStatus && !changes.oldAssignee) {
       await logAudit({
         action: AuditAction.TASK_UPDATED,
-        performedBy: userId,
-        targetTask: task._id,
-        details: changes,
+        actor: userId,
+        entity: 'Task',
+        entityId: task._id,
+        metadata: changes,
       });
     }
 
@@ -303,12 +359,34 @@ export const deleteTask = async (req: Request, res: Response) => {
     const task = await Task.findById(taskId);
     if (!task) return res.status(404).json({ message: 'Task not found' });
 
+    // Security Audit: IDOR Protection
+    const leadUser = await User.findById(userId);
+    if (req.user!.role === UserRole.EMPLOYEE) {
+      if (task.assignedTo.toString() !== userId) {
+        return res.status(403).json({ message: 'Employees can only delete their own tasks' });
+      }
+    } else if (req.user!.role === UserRole.TEAM_LEAD) {
+      if (
+        task.createdBy.toString() !== userId &&
+        task.assigner?.toString() !== userId &&
+        task.assignedTo.toString() !== userId &&
+        task.team?.toString() !== leadUser?.team?.toString()
+      ) {
+        return res.status(403).json({ message: 'Team Leads can only delete tasks within their team' });
+      }
+    }
+
+    const hasChildren = await Task.exists({ parentTask: taskId });
+    if (hasChildren) {
+      return res.status(400).json({ message: 'Cannot delete a task that has subtasks. Please delete or unlink subtasks first.' });
+    }
+
     await logAudit({
       action: AuditAction.TASK_DELETED,
-      performedBy: userId,
-      targetTask: task._id,
-      targetUser: task.assignedTo,
-      details: { title: task.title },
+      actor: userId,
+      entity: 'Task',
+      entityId: task._id,
+      metadata: { title: task.title },
     });
 
     await Task.findByIdAndDelete(taskId);
@@ -331,6 +409,23 @@ export const addComment = async (req: Request, res: Response) => {
     const task = await Task.findById(taskId);
     if (!task) return res.status(404).json({ message: 'Task not found' });
 
+    // Security Audit: IDOR Protection
+    const leadUser = await User.findById(userId);
+    if (req.user!.role === UserRole.EMPLOYEE) {
+      if (task.assignedTo.toString() !== userId) {
+        return res.status(403).json({ message: 'Employees can only comment on their own tasks' });
+      }
+    } else if (req.user!.role === UserRole.TEAM_LEAD) {
+      if (
+        task.createdBy.toString() !== userId &&
+        task.assigner?.toString() !== userId &&
+        task.assignedTo.toString() !== userId &&
+        task.team?.toString() !== leadUser?.team?.toString()
+      ) {
+        return res.status(403).json({ message: 'Team Leads can only comment on tasks within their team' });
+      }
+    }
+
     task.comments.push({
       author: userId as any,
       text: text.trim(),
@@ -340,10 +435,11 @@ export const addComment = async (req: Request, res: Response) => {
     await task.save();
 
     await logAudit({
-      action: AuditAction.TASK_COMMENT_ADDED,
-      performedBy: userId,
-      targetTask: task._id,
-      details: { commentPreview: text.substring(0, 100) },
+      action: 'TASK_COMMENT_ADDED' as AuditAction,
+      actor: userId,
+      entity: 'Task',
+      entityId: task._id,
+      metadata: { commentPreview: text.substring(0, 100) },
     });
 
     const updated = await Task.findById(taskId)

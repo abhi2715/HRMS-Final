@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Button } from '../../components/ui/Button/Button';
 import { attendanceApi } from '../../services/attendanceApi';
@@ -17,7 +17,7 @@ export default function MyAttendancePage() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const { addToast } = useToast();
 
-  const fetchAttendance = async () => {
+  const fetchAttendance = useCallback(async () => {
     try {
       setLoading(true);
       const [historyData, todayData] = await Promise.all([
@@ -32,11 +32,11 @@ export default function MyAttendancePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedMonth, selectedYear, addToast]);
 
   useEffect(() => {
     fetchAttendance();
-  }, [selectedMonth, selectedYear]);
+  }, [fetchAttendance]);
 
   const handleCheckIn = async () => {
     try {

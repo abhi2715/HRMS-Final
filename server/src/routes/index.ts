@@ -16,6 +16,8 @@ import payrollRoutes from './payroll.routes';
 import weeklyReportRoutes from './weeklyReport.routes';
 import analyticsRoutes from './analytics.routes';
 import notificationRoutes from './notification.routes';
+import searchRoutes from './search.routes';
+import aiRoutes from './ai.routes';
 
 /**
  * Central route registry.
@@ -48,11 +50,8 @@ router.use('/payroll', payrollRoutes);
 router.use('/weekly-report', weeklyReportRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/notifications', notificationRoutes);
-
-// Future modules:
-// router.use('/notifications', notificationRoutes);
-// router.use('/analytics', analyticsRoutes);
-// router.use('/reports', reportRoutes);
+router.use('/search', searchRoutes);
+router.use('/ai', aiRoutes);
 
 export default router;
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card } from '../../components/ui/Card/Card';
 import { Button } from '../../components/ui/Button/Button';
 import { Input } from '../../components/ui/Input/Input';
@@ -24,13 +24,7 @@ export default function TeamDailyProgressPage() {
   const [loading, setLoading] = useState(true);
   const [locking, setLocking] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (user?.team) {
-      fetchData();
-    }
-  }, [date, user?.team]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!user?.team) return;
     
     try {
@@ -44,12 +38,19 @@ export default function TeamDailyProgressPage() {
       setRecords(allRes);
       setMissed(missedRes);
       setBlocked(blockedRes);
-    } catch (error) {
+    } catch (error: any) {
+      console.error(error);
       toast.error('Failed to load team progress');
     } finally {
       setLoading(false);
     }
-  };
+  }, [date, user?.team]);
+
+  useEffect(() => {
+    if (user?.team) {
+      fetchData();
+    }
+  }, [fetchData, user?.team]);
 
   const handleLock = async (id: string) => {
     try {
@@ -57,7 +58,8 @@ export default function TeamDailyProgressPage() {
       await dailyProgressApi.lockProgress(id);
       toast.success('Record locked successfully');
       fetchData();
-    } catch (error) {
+    } catch (error: any) {
+      console.error(error);
       toast.error('Failed to lock record');
     } finally {
       setLocking(null);

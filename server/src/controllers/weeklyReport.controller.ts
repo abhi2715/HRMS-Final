@@ -3,6 +3,8 @@ import WeeklyReport from '../models/WeeklyReport.model';
 import Task from '../models/Task.model';
 import AuditLog from '../models/AuditLog.model';
 import { sendSuccess, sendError } from '../utils/response';
+import { logAudit } from '../services/audit.service';
+import { AuditAction } from '../models/AuditLog.model';
 import mongoose from 'mongoose';
 
 export const getReportMetrics = async (req: Request, res: Response) => {
@@ -18,37 +20,41 @@ export const getReportMetrics = async (req: Request, res: Response) => {
 
     const teamObjectId = new mongoose.Types.ObjectId(teamId as string);
 
-    // Get all tasks for this team that were either:
-    // 1. Created before the end date and not completed yet (pending)
-    // 2. Completed within this week's date range
-    // 3. Due before the end date but not completed (overdue)
-    
-    // For simplicity, we just pull all tasks for the team and calculate locally. 
-    // In production with millions of tasks, use aggregation pipeline.
-    const tasks = await Task.find({ team: teamObjectId });
-
-    let tasksCompleted = 0;
-    let tasksPending = 0;
-    let overdueTasks = 0;
-
-    tasks.forEach(task => {
-      // Check if task was completed within the week
-      if (task.status === 'completed' && task.completedAt) {
-        if (task.completedAt >= start && task.completedAt <= end) {
-          tasksCompleted++;
+    // Use MongoDB aggregation pipeline for performance
+    const taskStats = await Task.aggregate([
+      {
+        $match: {
+          team: teamObjectId,
+          $or: [
+            { completedAt: { $gte: start, $lte: end } },
+            { createdAt: { $lte: end }, status: { $ne: 'completed' } }
+          ]
         }
-      } else {
-        // Task is pending
-        // Is it relevant to this week? E.g., created before week end
-        if (task.createdAt <= end) {
-          tasksPending++;
-          // Is it overdue relative to the week's end?
-          if (task.dueDate && task.dueDate < end) {
-            overdueTasks++;
+      },
+      {
+        $group: {
+          _id: null,
+          tasksCompleted: {
+            $sum: {
+              $cond: [{ $and: [{ $eq: ['$status', 'completed'] }, { $gte: ['$completedAt', start] }, { $lte: ['$completedAt', end] }] }, 1, 0]
+            }
+          },
+          tasksPending: {
+            $sum: {
+              $cond: [{ $and: [{ $ne: ['$status', 'completed'] }, { $lte: ['$createdAt', end] }] }, 1, 0]
+            }
+          },
+          overdueTasks: {
+            $sum: {
+              $cond: [{ $and: [{ $ne: ['$status', 'completed'] }, { $lte: ['$createdAt', end] }, { $lt: ['$dueDate', end] }] }, 1, 0]
+            }
           }
         }
       }
-    });
+    ]);
+
+    const stats = taskStats[0] || { tasksCompleted: 0, tasksPending: 0, overdueTasks: 0 };
+    const { tasksCompleted, tasksPending, overdueTasks } = stats;
 
     const totalActive = tasksCompleted + tasksPending;
     const completionRate = totalActive > 0 ? Math.round((tasksCompleted / totalActive) * 100) : 0;
@@ -103,11 +109,11 @@ export const createWeeklyReport = async (req: Request, res: Response) => {
     await newReport.save();
 
     await AuditLog.create({
-      action: 'WEEKLY_REPORT_CREATED',
+      action: AuditAction.REPORT_SUBMITTED,
       actor: teamLeadId,
-      target: newReport._id,
-      targetModel: 'WeeklyReport',
-      details: `Submitted weekly report for team ${teamId}`,
+      entity: 'WeeklyReport',
+      entityId: newReport._id,
+      metadata: { details: `Submitted weekly report for team ${teamId}` },
     });
 
     sendSuccess(res, { report: newReport }, 'Weekly report submitted', 201);
@@ -133,11 +139,11 @@ export const updateWeeklyReport = async (req: Request, res: Response) => {
     }
 
     await AuditLog.create({
-      action: 'WEEKLY_REPORT_UPDATED',
+      action: AuditAction.REPORT_MODIFIED,
       actor: userId,
-      target: report._id,
-      targetModel: 'WeeklyReport',
-      details: `Updated weekly report ID: ${id}`,
+      entity: 'WeeklyReport',
+      entityId: report._id,
+      metadata: { details: `Updated weekly report ID: ${id}` },
     });
 
     sendSuccess(res, { report }, 'Weekly report updated', 200);
@@ -149,11 +155,23 @@ export const updateWeeklyReport = async (req: Request, res: Response) => {
 export const getTeamReports = async (req: Request, res: Response) => {
   try {
     const { teamId } = req.params;
-    const reports = await WeeklyReport.find({ team: teamId })
-      .populate('teamLead', 'firstName lastName')
-      .sort({ weekStartDate: -1 });
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const skip = (page - 1) * limit;
 
-    sendSuccess(res, { reports }, 'Team reports retrieved', 200);
+    const [reports, total] = await Promise.all([
+      WeeklyReport.find({ team: teamId })
+        .populate('teamLead', 'firstName lastName')
+        .sort({ weekStartDate: -1 })
+        .skip(skip)
+        .limit(limit),
+      WeeklyReport.countDocuments({ team: teamId })
+    ]);
+
+    sendSuccess(res, { 
+      reports,
+      pagination: { total, page, limit, pages: Math.ceil(total / limit) }
+    }, 'Team reports retrieved', 200);
   } catch (error) {
     sendError(res, 'Error retrieving team reports', 500);
   }
@@ -161,12 +179,24 @@ export const getTeamReports = async (req: Request, res: Response) => {
 
 export const getAllReports = async (req: Request, res: Response) => {
   try {
-    const reports = await WeeklyReport.find()
-      .populate('team', 'name')
-      .populate('teamLead', 'firstName lastName')
-      .sort({ weekStartDate: -1 });
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const skip = (page - 1) * limit;
 
-    sendSuccess(res, { reports }, 'All reports retrieved', 200);
+    const [reports, total] = await Promise.all([
+      WeeklyReport.find()
+        .populate('team', 'name')
+        .populate('teamLead', 'firstName lastName')
+        .sort({ weekStartDate: -1 })
+        .skip(skip)
+        .limit(limit),
+      WeeklyReport.countDocuments()
+    ]);
+
+    sendSuccess(res, { 
+      reports,
+      pagination: { total, page, limit, pages: Math.ceil(total / limit) }
+    }, 'All reports retrieved', 200);
   } catch (error) {
     sendError(res, 'Error retrieving all reports', 500);
   }

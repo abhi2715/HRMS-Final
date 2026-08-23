@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { attendanceApi } from '../../services/attendanceApi';
 import type { AttendanceRecord } from '../../services/attendanceApi';
@@ -36,7 +36,7 @@ export default function TeamAttendancePage() {
   
   const { addToast } = useToast();
 
-  const fetchAttendance = async () => {
+  const fetchAttendance = useCallback(async () => {
     if (!teamId) return;
     try {
       setLoading(true);
@@ -44,17 +44,17 @@ export default function TeamAttendancePage() {
       const endDate = new Date(selectedYear, selectedMonth, 0, 23, 59, 59, 999).toISOString();
       const data = await attendanceApi.getTeamAttendance(teamId, startDate, endDate);
       setRecords(data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch team attendance', error);
       addToast({ type: 'error', title: 'Failed to fetch team attendance' });
     } finally {
       setLoading(false);
     }
-  };
+  }, [teamId, selectedMonth, selectedYear, addToast]);
 
   useEffect(() => {
     fetchAttendance();
-  }, [teamId, selectedMonth, selectedYear]);
+  }, [fetchAttendance]);
 
   const openCorrection = (record: AttendanceRecord) => {
     setSelectedRecord(record);

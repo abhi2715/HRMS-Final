@@ -40,7 +40,8 @@ export const MyLeavesPage: React.FC = () => {
       setBalances(balRes);
       setRequests(reqRes);
       setTypes(typRes.filter(t => t.isActive));
-    } catch (error) {
+    } catch (error: any) {
+      console.error(error);
       toast.error('Failed to load leave data');
     } finally {
       setIsLoading(false);

@@ -85,6 +85,8 @@ const attendanceSchema = new Schema<IAttendanceDocument>(
 
 // Compound index for fast lookup of a user's attendance on a specific date
 attendanceSchema.index({ user: 1, date: 1 }, { unique: true });
+attendanceSchema.index({ team: 1, date: 1 });
+attendanceSchema.index({ date: 1 });
 
-const Attendance = mongoose.model<IAttendanceDocument, IAttendanceModel>('Attendance', attendanceSchema);
+const Attendance = mongoose.models.Attendance || mongoose.model<IAttendanceDocument, IAttendanceModel>('Attendance', attendanceSchema);
 export default Attendance;

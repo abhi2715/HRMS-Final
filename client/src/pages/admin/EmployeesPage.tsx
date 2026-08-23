@@ -44,7 +44,8 @@ export default function EmployeesPage() {
     try {
       const res = await teamsApi.getTeams();
       setTeams(res);
-    } catch (e) {
+    } catch (e: any) {
+      console.error(e);
       console.error('Failed to load teams');
     }
   }, []);
@@ -54,7 +55,8 @@ export default function EmployeesPage() {
       setLoading(true);
       const res = await usersApi.getUsers({ limit: 100 });
       setUsers(res.data);
-    } catch (error) {
+    } catch (error: any) {
+      console.error(error);
       addToast({ type: 'error', title: 'Failed to load employees' });
     } finally {
       setLoading(false);
@@ -129,7 +131,8 @@ export default function EmployeesPage() {
       await usersApi.updateUser(selectedUser._id, { isActive: confirmAction === 'activate' });
       addToast({ type: 'success', title: `User ${confirmAction}d successfully` });
       fetchUsers();
-    } catch (error) {
+    } catch (error: any) {
+      console.error(error);
       addToast({ type: 'error', title: `Failed to ${confirmAction} user` });
     } finally {
       setIsConfirmOpen(false);

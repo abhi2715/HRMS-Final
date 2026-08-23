@@ -50,6 +50,6 @@ const teamSchema = new Schema<ITeamDocument>(
 teamSchema.index({ isActive: 1 });
 teamSchema.index({ manager: 1 });
 
-const Team = mongoose.model<ITeamDocument, ITeamModel>('Team', teamSchema);
+const Team = mongoose.models.Team || mongoose.model<ITeamDocument, ITeamModel>('Team', teamSchema);
 
 export default Team;

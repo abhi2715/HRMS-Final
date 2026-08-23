@@ -10,7 +10,7 @@ import toast from 'react-hot-toast';
 import { format, subDays } from 'date-fns';
 import { CheckCircle, AlertTriangle, Target, Timer, Calendar } from 'lucide-react';
 
-export const EmployeeAnalyticsPage: React.FC = () => {
+export const EmployeeAnalyticsPage: React.FC = React.memo(() => {
   const { user } = useAuth();
   const [analytics, setAnalytics] = useState<EmployeeAnalytics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -174,4 +174,4 @@ export const EmployeeAnalyticsPage: React.FC = () => {
       )}
     </div>
   );
-};
+});

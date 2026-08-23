@@ -75,5 +75,5 @@ const leaveSchema = new Schema<ILeaveDocument>(
   }
 );
 
-const Leave = mongoose.model<ILeaveDocument, ILeaveModel>('Leave', leaveSchema);
+const Leave = mongoose.models.Leave || mongoose.model<ILeaveDocument, ILeaveModel>('Leave', leaveSchema);
 export default Leave;

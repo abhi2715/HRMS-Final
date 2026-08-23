@@ -3,7 +3,8 @@ import mongoose from 'mongoose';
 import Attendance from '../models/Attendance.model';
 import User from '../models/User.model';
 import AuditLog, { AuditAction } from '../models/AuditLog.model';
-import { AttendanceStatus, UserRole } from '../../../shared/types/enums';
+import { AttendanceStatus, UserRole, NotificationType } from '../../../shared/types/enums';
+import { notificationService } from '../services/notification.service';
 
 // Helpers
 const getStartAndEndOfDay = (date = new Date()) => {
@@ -43,11 +44,10 @@ export const checkIn = async (req: Request, res: Response) => {
 
     await AuditLog.create({
       action: AuditAction.ATTENDANCE_CHECKIN,
-      performedBy: userId,
-      targetUser: userId,
-      targetTeam: user?.team,
-      targetAttendance: attendance._id,
-      details: { checkIn: now },
+      actor: userId,
+      entity: 'Attendance',
+      entityId: attendance._id,
+      metadata: { checkIn: now, targetUser: userId, targetTeam: user?.team },
     });
 
     res.json(attendance);
@@ -83,11 +83,10 @@ export const checkOut = async (req: Request, res: Response) => {
 
     await AuditLog.create({
       action: AuditAction.ATTENDANCE_CHECKOUT,
-      performedBy: userId,
-      targetUser: userId,
-      targetTeam: attendance.team,
-      targetAttendance: attendance._id,
-      details: { checkOut: now, duration: attendance.duration },
+      actor: userId,
+      entity: 'Attendance',
+      entityId: attendance._id,
+      metadata: { checkOut: now, duration: attendance.duration, targetUser: userId, targetTeam: attendance.team },
     });
 
     res.json(attendance);
@@ -108,7 +107,7 @@ export const getMyAttendanceHistory = async (req: Request, res: Response) => {
       query.date = { $gte: startDate, $lte: endDate };
     }
 
-    const history = await Attendance.find(query).sort({ date: -1 }).lean();
+    const history = await Attendance.find(query).sort({ date: -1 }).limit(100).lean();
     res.json(history);
   } catch (error: any) {
     res.status(500).json({ message: 'Error fetching attendance history', error: error.message });
@@ -152,6 +151,7 @@ export const getTeamAttendance = async (req: Request, res: Response) => {
     const attendance = await Attendance.find(query)
       .populate('user', 'firstName lastName email jobTitle')
       .sort({ date: -1, 'user.firstName': 1 })
+      .limit(100)
       .lean();
       
     res.json(attendance);
@@ -180,6 +180,7 @@ export const getOrganizationAttendance = async (req: Request, res: Response) => 
       .populate('user', 'firstName lastName email jobTitle')
       .populate('team', 'name')
       .sort({ date: -1 })
+      .limit(100)
       .lean();
       
     res.json(attendance);
@@ -341,15 +342,28 @@ export const correctAttendance = async (req: Request, res: Response) => {
 
     await AuditLog.create({
       action: AuditAction.ATTENDANCE_CORRECTED,
-      performedBy: userId,
-      targetUser: attendance.user,
-      targetTeam: attendance.team,
-      targetAttendance: attendance._id,
-      details: {
+      actor: userId,
+      entity: 'Attendance',
+      entityId: attendance._id,
+      metadata: {
+        targetUser: attendance.user,
+        targetTeam: attendance.team,
         reason: correctionReason,
         changes: { from: originalValues, to: { checkIn: attendance.checkIn, checkOut: attendance.checkOut, status: attendance.status, duration: attendance.duration, notes: attendance.notes } }
       },
     });
+
+    // Notify the user about the correction
+    if (attendance.user.toString() !== userId) {
+      notificationService.sendNotification({
+        recipientId: attendance.user.toString(),
+        title: 'Attendance Record Corrected',
+        message: `Your attendance record for ${attendance.date.toLocaleDateString()} was updated. Reason: ${correctionReason}`,
+        type: NotificationType.ATTENDANCE,
+        relatedEntityId: attendance._id.toString(),
+        entityModel: 'Attendance',
+      });
+    }
 
     res.json(attendance);
   } catch (error: any) {

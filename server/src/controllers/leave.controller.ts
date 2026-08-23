@@ -4,8 +4,10 @@ import { LeaveBalance } from '../models/LeaveBalance.model';
 import { LeaveRequest } from '../models/LeaveRequest.model';
 import User from '../models/User.model';
 import AuditLog, { AuditAction } from '../models/AuditLog.model';
-import { LeaveStatus } from '../../../shared/types/enums';
+import { LeaveStatus, UserRole } from '../../../shared/types/enums';
 import { sendSuccess, sendError } from '../utils/response';
+import { logAudit } from '../services/audit.service';
+
 import { notificationService } from '../services/notification.service';
 import { NotificationType } from '../../../shared/types/enums';
 import mongoose from 'mongoose';
@@ -151,17 +153,13 @@ export const applyLeave = async (req: Request, res: Response) => {
       status: LeaveStatus.PENDING,
     }], { session });
 
-    await AuditLog.create([{
+    await AuditLog.create({
       action: AuditAction.LEAVE_REQUEST_SUBMITTED,
-      performedBy: employeeId,
-      details: {
-        requestId: request[0]._id,
-        leaveType: leaveType.name,
-        days,
-        startDate: start,
-        endDate: end,
-      },
-    }], { session });
+      actor: employeeId,
+      entity: 'LeaveRequest',
+      entityId: request[0]._id,
+      metadata: { targetUser: employeeId, details: 'Leave request submitted via API' },
+    });
 
     await session.commitTransaction();
     session.endSession();
@@ -169,6 +167,22 @@ export const applyLeave = async (req: Request, res: Response) => {
     // Populate and return
     const populatedRequest = await LeaveRequest.findById(request[0]._id)
       .populate('leaveType', 'name color');
+
+    // Notify team lead about the leave request
+    const employee = await User.findById(employeeId);
+    if (employee?.team) {
+      const team = await (await import('../models/Team.model')).default.findById(employee.team);
+      if (team?.manager && team.manager.toString() !== employeeId?.toString()) {
+        notificationService.sendNotification({
+          recipientId: team.manager.toString(),
+          title: 'New Leave Request',
+          message: `${employee.firstName} ${employee.lastName} has applied for ${leaveType.name}`,
+          type: NotificationType.LEAVE,
+          relatedEntityId: request[0]._id.toString(),
+          entityModel: 'LeaveRequest',
+        });
+      }
+    }
 
     return sendSuccess(res, populatedRequest, 'Leave application submitted successfully', 201);
   } catch (error) {
@@ -204,8 +218,10 @@ export const cancelLeave = async (req: Request, res: Response) => {
 
     await AuditLog.create({
       action: AuditAction.LEAVE_REQUEST_CANCELLED,
-      performedBy: req.user?._id,
-      details: { requestId: request._id },
+      actor: req.user?._id,
+      entity: 'LeaveRequest',
+      entityId: request._id,
+      metadata: { targetUser: request.employee, details: 'Leave request cancelled by user' },
     });
 
     return sendSuccess(res, request, 'Leave request cancelled successfully');
@@ -222,12 +238,12 @@ export const getTeamRequests = async (req: Request, res: Response) => {
   try {
     const { teamId } = req.params;
     
-    // Validate team access (team lead is assigned to this team)
+    // Security Audit: Validate team access (IDOR Protection)
     const user = await User.findById(req.user?._id);
     if (!user || user.team?.toString() !== teamId) {
-      // In a real scenario, you'd check if user is admin or actual team lead.
-      // Assuming authorization middleware already ensures they have LEAVE_VIEW_TEAM.
-      // We will allow if they are in the team (which for Leads means they manage it).
+      if (req.user?.role === UserRole.TEAM_LEAD || req.user?.role === UserRole.EMPLOYEE) {
+        return res.status(403).json({ message: 'You can only view leave requests for your own team' });
+      }
     }
 
     // Find all users in this team
@@ -269,11 +285,21 @@ export const processLeaveRequest = async (req: Request, res: Response) => {
       return sendError(res, 'Rejection reason is required', 400);
     }
 
-    const request = await LeaveRequest.findById(id).session(session);
+    const request = await LeaveRequest.findById(id).populate('employee').session(session);
     if (!request) {
       await session.abortTransaction();
       session.endSession();
       return sendError(res, 'Leave request not found', 404);
+    }
+
+    // Security Audit: IDOR Protection
+    const approver = await User.findById(req.user?._id).session(session);
+    if (req.user?.role === UserRole.TEAM_LEAD) {
+      if ((request.employee as any).team?.toString() !== approver?.team?.toString()) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(403).json({ message: 'You can only approve leaves for employees in your team' });
+      }
     }
 
     if (request.status !== LeaveStatus.PENDING) {
@@ -293,7 +319,7 @@ export const processLeaveRequest = async (req: Request, res: Response) => {
     if (status === LeaveStatus.APPROVED) {
       const year = request.startDate.getFullYear();
       const balance = await LeaveBalance.findOne({
-        employee: request.employee,
+        employee: (request.employee as any)._id,
         leaveType: request.leaveType,
         year,
       }).session(session);
@@ -311,15 +337,13 @@ export const processLeaveRequest = async (req: Request, res: Response) => {
 
     await request.save({ session });
 
-    await AuditLog.create([{
+    await AuditLog.create({
       action: status === LeaveStatus.APPROVED ? AuditAction.LEAVE_REQUEST_APPROVED : AuditAction.LEAVE_REQUEST_REJECTED,
-      performedBy: req.user?._id,
-      targetUser: request.employee,
-      details: {
-        requestId: request._id,
-        days: request.days,
-      },
-    }], { session });
+      actor: req.user?._id,
+      entity: 'LeaveRequest',
+      entityId: request._id,
+      metadata: { targetUser: (request.employee as any)._id, details: `Leave request ${status}` },
+    });
 
     await session.commitTransaction();
     session.endSession();
@@ -327,6 +351,18 @@ export const processLeaveRequest = async (req: Request, res: Response) => {
     const populatedRequest = await LeaveRequest.findById(request._id)
       .populate('employee', 'firstName lastName')
       .populate('leaveType', 'name color');
+
+    // Notify employee about the decision
+    notificationService.sendNotification({
+      recipientId: (request.employee as any)._id.toString(),
+      title: `Leave Request ${status === LeaveStatus.APPROVED ? 'Approved' : 'Rejected'}`,
+      message: status === LeaveStatus.APPROVED
+        ? 'Your leave request has been approved.'
+        : `Your leave request has been rejected. Reason: ${rejectionReason}`,
+      type: NotificationType.LEAVE,
+      relatedEntityId: request._id.toString(),
+      entityModel: 'LeaveRequest',
+    });
 
     return sendSuccess(res, populatedRequest, `Leave request ${status} successfully`);
   } catch (error) {

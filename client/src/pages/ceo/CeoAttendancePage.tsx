@@ -38,7 +38,7 @@ export default function CeoAttendancePage() {
     };
     
     fetchAnalytics();
-  }, [days]);
+  }, [days, addToast]);
 
   const totalRecords = useMemo(() => {
     if (!summary) return 0;

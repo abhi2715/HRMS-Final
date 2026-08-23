@@ -67,8 +67,8 @@ const dailyProgressSchema = new Schema<IDailyProgressDocument>(
     },
     status: {
       type: String,
-      enum: Object.values(DailyProgressStatus),
-      default: DailyProgressStatus.DRAFT,
+      enum: ['draft', 'submitted', 'locked'],
+      default: 'draft',
     },
     submittedAt: {
       type: Date,
@@ -100,6 +100,6 @@ dailyProgressSchema.index({ employee: 1, date: 1 }, { unique: true });
 dailyProgressSchema.index({ team: 1, date: 1 });
 dailyProgressSchema.index({ status: 1 });
 
-const DailyProgress = mongoose.model<IDailyProgressDocument, IDailyProgressModel>('DailyProgress', dailyProgressSchema);
+const DailyProgress = mongoose.models.DailyProgress || mongoose.model<IDailyProgressDocument, IDailyProgressModel>('DailyProgress', dailyProgressSchema);
 
 export default DailyProgress;

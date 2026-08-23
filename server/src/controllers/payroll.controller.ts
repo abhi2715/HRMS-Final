@@ -3,6 +3,8 @@ import SalaryRecord from '../models/Payroll.model';
 import User from '../models/User.model';
 import AuditLog from '../models/AuditLog.model';
 import { sendSuccess, sendError } from '../utils/response';
+import { logAudit } from '../services/audit.service';
+import { AuditAction } from '../models/AuditLog.model';
 
 export const getMySalaryHistory = async (req: Request, res: Response) => {
   try {
@@ -94,11 +96,11 @@ export const createSalaryRecord = async (req: Request, res: Response) => {
     await newRecord.save();
 
     await AuditLog.create({
-      action: 'SALARY_CREATED',
+      action: AuditAction.PAYROLL_CREATED,
       actor: creatorId,
-      target: id,
-      targetModel: 'User',
-      details: `Created new salary record effective ${effectiveDate}`,
+      entity: 'SalaryRecord',
+      entityId: newRecord._id,
+      metadata: { employeeId: id, effectiveDate, details: `Created new salary record effective ${effectiveDate}` },
     });
 
     sendSuccess(res, { record: newRecord }, 'Salary record created', 201);
@@ -131,11 +133,11 @@ export const updateSalaryRecord = async (req: Request, res: Response) => {
     await record.save();
 
     await AuditLog.create({
-      action: 'SALARY_UPDATED',
+      action: AuditAction.PAYROLL_MODIFIED,
       actor: creatorId,
-      target: record.employee,
-      targetModel: 'User',
-      details: `Updated salary record ID: ${id}`,
+      entity: 'SalaryRecord',
+      entityId: record._id,
+      metadata: { employeeId: record.employee, details: `Updated salary record ID: ${id}` },
     });
 
     sendSuccess(res, { record }, 'Salary record updated', 200);

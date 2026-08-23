@@ -17,7 +17,8 @@ export default function OrganizationPage() {
       setLoading(true);
       const data = await organizationApi.getHierarchy();
       setHierarchy(data);
-    } catch (error) {
+    } catch (error: any) {
+      console.error(error);
       addToast({ type: 'error', title: 'Failed to load organization hierarchy' });
     } finally {
       setLoading(false);

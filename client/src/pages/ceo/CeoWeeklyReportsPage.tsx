@@ -25,7 +25,8 @@ export const CeoWeeklyReportsPage: React.FC = () => {
       setIsLoading(true);
       const data = await weeklyReportApi.getAllReports();
       setReports(data);
-    } catch (error) {
+    } catch (error: any) {
+      console.error(error);
       toast.error('Failed to load weekly reports');
     } finally {
       setIsLoading(false);

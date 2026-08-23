@@ -1,5 +1,9 @@
+import mongoose from 'mongoose';
 import User, { IUserDocument } from '../models/User.model';
-import { UserRole } from '../../../shared/types/enums';
+import Team from '../models/Team.model';
+import Task from '../models/Task.model';
+import LeaveRequest from '../models/LeaveRequest.model';
+import { UserRole, LeaveStatus, TaskStatus } from '../../../shared/types/enums';
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -233,18 +237,69 @@ export async function changePassword(
 
 // ── Deactivate User (Admin only) ───────────────────────────────
 export async function deactivateUser(userId: string): Promise<UserResponse> {
-  const user = await User.findById(userId).select('+refreshTokens');
-  if (!user) {
-    throw new NotFoundError('User');
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const user = await User.findById(userId).select('+refreshTokens').session(session);
+    if (!user) {
+      throw new NotFoundError('User');
+    }
+
+    user.isActive = false;
+    user.refreshTokens = []; // revoke all sessions
+    await user.save({ session });
+
+    // 1. Cancel pending leave requests
+    await LeaveRequest.updateMany(
+      { employee: userId, status: LeaveStatus.PENDING },
+      { status: LeaveStatus.CANCELLED },
+      { session }
+    );
+
+    // 2. If Team Lead, unset manager field from teams they manage
+    if (user.role === UserRole.TEAM_LEAD) {
+      await Team.updateMany(
+        { manager: userId },
+        { $unset: { manager: 1 } },
+        { session }
+      );
+    }
+
+    // 3. Reassign active tasks to Team Lead (or cancel if no lead)
+    if (user.team) {
+      const team = await Team.findById(user.team).session(session);
+      if (team && team.manager && String(team.manager) !== String(userId)) {
+        await Task.updateMany(
+          { assignedTo: userId, status: { $in: [TaskStatus.ASSIGNED, TaskStatus.IN_PROGRESS] } },
+          { assignedTo: team.manager },
+          { session }
+        );
+      } else {
+        await Task.updateMany(
+          { assignedTo: userId, status: { $in: [TaskStatus.ASSIGNED, TaskStatus.IN_PROGRESS] } },
+          { status: TaskStatus.CANCELLED },
+          { session }
+        );
+      }
+    } else {
+      await Task.updateMany(
+        { assignedTo: userId, status: { $in: [TaskStatus.ASSIGNED, TaskStatus.IN_PROGRESS] } },
+        { status: TaskStatus.CANCELLED },
+        { session }
+      );
+    }
+
+    await session.commitTransaction();
+    session.endSession();
+
+    logger.info(`User deactivated: ${user.email} (Leaves cancelled, Tasks reassigned/cancelled)`);
+    return formatUserResponse(user);
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
   }
-
-  user.isActive = false;
-  user.refreshTokens = []; // revoke all sessions
-  await user.save();
-
-  logger.info(`User deactivated: ${user.email}`);
-
-  return formatUserResponse(user);
 }
 
 // ── Activate User (Admin only) ─────────────────────────────────

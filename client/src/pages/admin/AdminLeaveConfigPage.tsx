@@ -25,7 +25,8 @@ export const AdminLeaveConfigPage: React.FC = () => {
       ]);
       setTypes(typRes);
       setBalances(balRes);
-    } catch (error) {
+    } catch (error: any) {
+      console.error(error);
       toast.error('Failed to load leave config data');
     } finally {
       setIsLoading(false);

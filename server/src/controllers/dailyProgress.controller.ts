@@ -51,7 +51,7 @@ export const submitDailyProgress = async (req: Request, res: Response) => {
 
     const user = await User.findById(userId);
 
-    let record = await DailyProgress.findOne({ user: userId, date: { $gte: startOfDay, $lte: endOfDay } });
+    let record = await DailyProgress.findOne({ employee: userId, date: { $gte: startOfDay, $lte: endOfDay } });
     await enforceLazyLocking(record);
 
     if (record && record.status === DailyProgressStatus.LOCKED) {
@@ -87,16 +87,20 @@ export const submitDailyProgress = async (req: Request, res: Response) => {
     if (record.status === DailyProgressStatus.SUBMITTED) {
       await AuditLog.create({
         action: isNew ? AuditAction.DAILY_PROGRESS_SUBMITTED : AuditAction.DAILY_PROGRESS_UPDATED,
-        performedBy: userId,
+        actor: userId,
         targetUser: userId,
         targetTeam: record.team,
-        targetDailyProgress: record._id,
+        entity: 'DailyProgress',
+      entityId: record._id,
         details: { date: targetDate, status: record.status },
       });
     }
 
     res.json(record);
   } catch (error: any) {
+    if (error.code === 11000) {
+      return res.status(400).json({ message: 'A progress report for this date already exists.' });
+    }
     res.status(500).json({ message: 'Error submitting daily progress', error: error.message });
   }
 };
@@ -127,7 +131,8 @@ export const getMyDailyProgress = async (req: Request, res: Response) => {
 
     const records = await DailyProgress.find(query)
       .populate('tasksWorkedOn', 'title')
-      .sort({ date: -1 });
+      .sort({ date: -1 })
+      .limit(100);
 
     for (let record of records) {
       await enforceLazyLocking(record);
@@ -188,7 +193,8 @@ export const getTeamProgress = async (req: Request, res: Response) => {
     const records = await DailyProgress.find(query)
       .populate('employee', 'firstName lastName email')
       .populate('tasksWorkedOn', 'title')
-      .sort({ date: -1 });
+      .sort({ date: -1 })
+      .limit(100);
       
     for (let record of records) {
       await enforceLazyLocking(record);
@@ -263,7 +269,8 @@ export const getTeamBlocked = async (req: Request, res: Response) => {
     const records = await DailyProgress.find(query)
       .populate('employee', 'firstName lastName email')
       .populate('tasksWorkedOn', 'title')
-      .sort({ date: -1 });
+      .sort({ date: -1 })
+      .limit(100);
 
     res.json(records);
   } catch (error: any) {
@@ -291,7 +298,8 @@ export const getOrganizationProgress = async (req: Request, res: Response) => {
       .populate('employee', 'firstName lastName email')
       .populate('team', 'name')
       .populate('tasksWorkedOn', 'title')
-      .sort({ date: -1 });
+      .sort({ date: -1 })
+      .limit(100);
 
     res.json(records);
   } catch (error: any) {
@@ -375,11 +383,12 @@ export const lockProgress = async (req: Request, res: Response) => {
     await record.save();
 
     await AuditLog.create({
-      action: AuditAction.DAILY_PROGRESS_LOCKED,
-      performedBy: userId,
+      action: 'DAILY_PROGRESS_LOCKED',
+      actor: userId,
       targetUser: record.employee,
       targetTeam: record.team,
-      targetDailyProgress: record._id,
+      entity: 'DailyProgress',
+      entityId: record._id,
       details: { lockedAt: record.lockedAt },
     });
 

@@ -17,6 +17,7 @@
 .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none !important;
 }
 
 .btn:focus-visible {
@@ -61,6 +62,7 @@
 
 .btn--primary:active:not(:disabled) {
   background-color: var(--color-accent-active);
+  transform: scale(0.98);
 }
 
 /* Secondary */
@@ -75,6 +77,7 @@
 
 .btn--secondary:active:not(:disabled) {
   background-color: var(--color-border-strong);
+  transform: scale(0.98);
 }
 
 /* Outline */
@@ -91,6 +94,7 @@
 
 .btn--outline:active:not(:disabled) {
   background-color: var(--color-bg-subtle);
+  transform: scale(0.98);
 }
 
 /* Ghost */
@@ -106,6 +110,7 @@
 
 .btn--ghost:active:not(:disabled) {
   background-color: var(--color-border);
+  transform: scale(0.98);
 }
 
 /* Danger */
@@ -120,6 +125,7 @@
 
 .btn--danger:active:not(:disabled) {
   background-color: #991b1b; /* Tailwind red-800 equivalent */
+  transform: scale(0.98);
 }
 
 /* ── Elements ─────────────────────────────────────────────── */

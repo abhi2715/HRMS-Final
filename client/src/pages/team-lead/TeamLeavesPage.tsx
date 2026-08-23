@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Card } from '../../components/ui/Card/Card';
 import { Table } from '../../components/ui/Table/Table';
@@ -18,22 +18,23 @@ export const TeamLeavesPage: React.FC = () => {
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchRequests = async () => {
+  const fetchRequests = useCallback(async () => {
     if (!user?.team) return;
     try {
       setIsLoading(true);
       const res = await leaveApi.getTeamRequests(user.team);
       setRequests(res);
-    } catch (error) {
+    } catch (error: any) {
+      console.error(error);
       toast.error('Failed to load team leave requests');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user?.team]);
 
   useEffect(() => {
     fetchRequests();
-  }, [user]);
+  }, [fetchRequests]);
 
   const handleProcess = async (id: string, status: LeaveStatus, reason?: string) => {
     try {

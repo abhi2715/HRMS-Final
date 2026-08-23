@@ -183,7 +183,10 @@ taskSchema.index({ team: 1 });
 taskSchema.index({ dueDate: 1 });
 taskSchema.index({ priority: 1 });
 taskSchema.index({ parentTask: 1 });
+taskSchema.index({ team: 1, completedAt: 1 });
+taskSchema.index({ assignedTo: 1, completedAt: 1 });
+taskSchema.index({ createdAt: 1 });
 
-const Task = mongoose.model<ITaskDocument, ITaskModel>('Task', taskSchema);
+const Task = mongoose.models.Task || mongoose.model<ITaskDocument, ITaskModel>('Task', taskSchema);
 
 export default Task;

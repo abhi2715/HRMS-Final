@@ -3,9 +3,10 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
+import mongoSanitize from 'express-mongo-sanitize';
 
 import { corsOptions } from './config/cors';
-import { apiLimiter } from './middleware/rateLimiter.middleware';
+import { apiLimiter, authLimiter } from './middleware/rateLimiter.middleware';
 import { errorHandler } from './middleware/errorHandler.middleware';
 import { morganStream } from './utils/logger';
 import { sendError } from './utils/response';
@@ -21,12 +22,14 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
+app.use(mongoSanitize());
 
 // ── Request Logging ─────────────────────────────────────────
 app.use(morgan('combined', { stream: morganStream }));
 
 // ── Rate Limiting ───────────────────────────────────────────
 app.use('/api/', apiLimiter);
+app.use('/api/v1/auth', authLimiter);
 
 // ── API Routes ──────────────────────────────────────────────
 app.use('/api/v1', routes);

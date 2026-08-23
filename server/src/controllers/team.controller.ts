@@ -76,9 +76,10 @@ export const createTeam = async (req: Request, res: Response) => {
 
     await logAudit({
       action: AuditAction.TEAM_CREATED,
-      performedBy: req.user!._id,
-      targetTeam: team._id,
-      details: { name: team.name },
+      actor: req.user!._id,
+      entity: 'Team',
+      entityId: team._id,
+      metadata: { name: team.name },
     });
 
     res.status(201).json(team);
@@ -121,29 +122,43 @@ export const updateTeam = async (req: Request, res: Response) => {
 
     if (manager !== undefined && String(manager) !== String(team.manager)) {
       team.manager = manager || undefined;
-      
       if (manager) {
         const managerUser = await User.findById(manager);
-        if (managerUser && managerUser.role === UserRole.EMPLOYEE) {
-           managerUser.role = UserRole.TEAM_LEAD;
-           await managerUser.save();
+        if (managerUser) {
+          if (managerUser.role === UserRole.EMPLOYEE) {
+             managerUser.role = UserRole.TEAM_LEAD;
+          }
+          // Ensure the manager is actually part of this team
+          managerUser.team = team._id as any;
+          await managerUser.save();
         }
       }
 
       await logAudit({
         action: manager ? AuditAction.TEAM_LEAD_ASSIGNED : AuditAction.TEAM_LEAD_REMOVED,
-        performedBy: req.user!._id,
-        targetTeam: team._id,
-        targetUser: manager || undefined,
+        actor: req.user!._id,
+        entity: 'Team',
+        entityId: team._id,
+        metadata: { manager }
       });
     }
 
     if (isActive !== undefined && isActive !== team.isActive) {
+      if (isActive === false) {
+        const activeMembersCount = await User.countDocuments({ team: teamId, isActive: true });
+        if (activeMembersCount > 0) {
+          return res.status(400).json({ 
+            message: `Cannot deactivate team with ${activeMembersCount} active employee(s). Please reassign them first.` 
+          });
+        }
+      }
+      
       team.isActive = isActive;
       await logAudit({
         action: isActive ? AuditAction.TEAM_ACTIVATED : AuditAction.TEAM_DEACTIVATED,
-        performedBy: req.user!._id,
-        targetTeam: team._id,
+        actor: req.user!._id,
+        entity: 'Team',
+        entityId: team._id,
       });
     }
 
@@ -151,8 +166,9 @@ export const updateTeam = async (req: Request, res: Response) => {
 
     await logAudit({
       action: AuditAction.TEAM_UPDATED,
-      performedBy: req.user!._id,
-      targetTeam: team._id,
+      actor: req.user!._id,
+      entity: 'Team',
+      entityId: team._id,
     });
 
     const updatedTeam = await Team.findById(teamId).populate('manager', 'firstName lastName email role');

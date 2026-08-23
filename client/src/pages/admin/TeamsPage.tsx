@@ -37,7 +37,8 @@ export default function TeamsPage() {
     try {
       const res = await usersApi.getUsers({ role: 'TEAM_LEAD', limit: 100 });
       setManagers(res.data);
-    } catch (e) {
+    } catch (e: any) {
+      console.error(e);
       console.error('Failed to load managers');
     }
   }, []);
@@ -47,7 +48,8 @@ export default function TeamsPage() {
       setLoading(true);
       const data = await teamsApi.getTeams();
       setTeams(data);
-    } catch (error) {
+    } catch (error: any) {
+      console.error(error);
       addToast({ type: 'error', title: 'Failed to load teams' });
     } finally {
       setLoading(false);

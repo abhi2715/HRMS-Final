@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card } from '../../components/ui/Card/Card';
 import { MetricCard } from '../../components/ui/MetricCard/MetricCard';
 import { Input } from '../../components/ui/Input/Input';
@@ -15,21 +15,22 @@ export default function CeoDailyProgressPage() {
   const [summary, setSummary] = useState<OrgSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchData();
-  }, [date]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const data = await dailyProgressApi.getOrganizationSummary(date);
       setSummary(data);
-    } catch (error) {
+    } catch (error: any) {
+      console.error(error);
       toast.error('Failed to load organization progress summary');
     } finally {
       setLoading(false);
     }
-  };
+  }, [date]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const teamColumns: Column<any>[] = [
     {

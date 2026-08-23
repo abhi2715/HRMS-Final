@@ -46,4 +46,4 @@ const leaveTypeSchema = new Schema<ILeaveType>(
   }
 );
 
-export const LeaveType = mongoose.model<ILeaveType>('LeaveType', leaveTypeSchema);
+export const LeaveType = mongoose.models.LeaveType || mongoose.model<ILeaveType>('LeaveType', leaveTypeSchema);

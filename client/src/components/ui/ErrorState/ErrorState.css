@@ -19,9 +19,11 @@
   width: 64px;
   height: 64px;
   border-radius: var(--radius-full);
-  background-color: var(--color-error-subtle);
+  background-color: var(--color-surface);
+  border: 2px dashed var(--color-error-subtle);
   color: var(--color-error);
   margin-bottom: var(--space-4);
+  box-shadow: 0 0 0 8px var(--color-error-subtle);
 }
 
 .error-state__title {

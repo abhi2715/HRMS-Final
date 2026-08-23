@@ -155,6 +155,6 @@ userSchema.statics.findByEmail = function (email: string) {
 userSchema.index({ role: 1 });
 userSchema.index({ isActive: 1 });
 
-const User = mongoose.model<IUserDocument, IUserModel>('User', userSchema);
+const User = (mongoose.models.User as IUserModel) || mongoose.model<IUserDocument, IUserModel>('User', userSchema);
 
 export default User;

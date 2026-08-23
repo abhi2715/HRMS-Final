@@ -4,6 +4,7 @@ import {
   getTeamAnalytics,
   getEmployeeAnalytics,
 } from '../controllers/analytics.controller';
+import { getAttritionRisk } from '../controllers/ml.controller';
 import { authenticate } from '../middleware/auth.middleware';
 import { requirePermission } from '../middleware/rbac.middleware';
 import { Permission } from '../config/permissions';
@@ -16,6 +17,14 @@ router.get(
   authenticate,
   requirePermission(Permission.ANALYTICS_VIEW_ORGANIZATION),
   getOrganizationAnalytics
+);
+
+// ML Analytics
+router.get(
+  '/attrition-risk',
+  authenticate,
+  requirePermission(Permission.ANALYTICS_VIEW_ORGANIZATION),
+  getAttritionRisk
 );
 
 // Team Analytics

@@ -8,6 +8,7 @@ import { Permission } from '../utils/permissions';
 import { UserRole } from '../types/auth.types';
 import { TopNavigation } from '../components/layout/TopNavigation';
 import { CommandPalette } from '../components/layout/CommandPalette';
+import { AICopilot } from '../components/chat/AICopilot';
 import { IconButton } from '../components/ui/Button/IconButton';
 import { X } from 'lucide-react';
 import './AppLayout.css';
@@ -344,6 +345,7 @@ export default function AppLayout() {
       </div>
 
       <CommandPalette />
+      <AICopilot />
     </div>
   );
 }

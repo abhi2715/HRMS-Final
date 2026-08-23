@@ -4,6 +4,7 @@ import Team from '../models/Team.model';
 import { logAudit } from '../services/audit.service';
 import { AuditAction } from '../models/AuditLog.model';
 import { UserRole } from '../../../shared/types/enums';
+import { deactivateUser as serviceDeactivateUser, activateUser as serviceActivateUser } from '../services/auth.service';
 
 // List users with pagination and filtering
 export const getUsers = async (req: Request, res: Response) => {
@@ -78,9 +79,10 @@ export const createUser = async (req: Request, res: Response) => {
 
     await logAudit({
       action: AuditAction.USER_CREATED,
-      performedBy: req.user!._id,
-      targetUser: newUser._id,
-      details: { role: newUser.role, email: newUser.email },
+      actor: req.user!._id,
+      entity: 'User',
+      entityId: newUser._id,
+      metadata: { role: newUser.role, email: newUser.email },
     });
 
     res.status(201).json(userObj);
@@ -109,7 +111,7 @@ export const getUserById = async (req: Request, res: Response) => {
 export const updateUser = async (req: Request, res: Response) => {
   try {
     const { firstName, lastName, jobTitle, role, isActive, team } = req.body;
-    const userId = req.params.id;
+    const userId = req.params.id as string;
 
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: 'User not found' });
@@ -120,24 +122,37 @@ export const updateUser = async (req: Request, res: Response) => {
     if (jobTitle !== undefined) user.jobTitle = jobTitle;
     
     if (role && role !== user.role) {
+      if (user.role === UserRole.TEAM_LEAD && role === UserRole.EMPLOYEE) {
+        // If demoted from Team Lead, remove them as manager from any teams
+        await Team.updateMany({ manager: userId }, { $unset: { manager: 1 } });
+      }
       updates.oldRole = user.role;
       updates.newRole = role;
       user.role = role;
       
       await logAudit({
         action: AuditAction.ROLE_CHANGED,
-        performedBy: req.user!._id,
-        targetUser: user._id,
-        details: updates,
+        actor: req.user!._id,
+        entity: 'User',
+        entityId: user._id,
+        metadata: updates,
       });
     }
 
     if (isActive !== undefined && isActive !== user.isActive) {
+      if (isActive === false) {
+        await serviceDeactivateUser(userId);
+      } else {
+        await serviceActivateUser(userId);
+      }
+      // Since serviceDeactivateUser saves the user, we just update our local instance's flag
       user.isActive = isActive;
+      
       await logAudit({
         action: isActive ? AuditAction.USER_ACTIVATED : AuditAction.USER_DEACTIVATED,
-        performedBy: req.user!._id,
-        targetUser: user._id,
+        actor: req.user!._id,
+        entity: 'User',
+        entityId: user._id,
       });
     }
 
@@ -145,9 +160,10 @@ export const updateUser = async (req: Request, res: Response) => {
       user.team = team || undefined; // If empty string passed, unset team
       await logAudit({
         action: team ? AuditAction.EMPLOYEE_ASSIGNED_TO_TEAM : AuditAction.EMPLOYEE_REMOVED_FROM_TEAM,
-        performedBy: req.user!._id,
-        targetUser: user._id,
-        targetTeam: team || undefined,
+        actor: req.user!._id,
+        entity: 'User',
+        entityId: user._id,
+        metadata: { teamId: team || null }
       });
     }
 

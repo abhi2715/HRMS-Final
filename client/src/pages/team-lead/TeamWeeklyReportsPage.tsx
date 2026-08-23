@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Card } from '../../components/ui/Card/Card';
@@ -21,9 +21,9 @@ export const TeamWeeklyReportsPage: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setIsLoading(true);
       // Fetch the team lead's team first
@@ -37,12 +37,13 @@ export const TeamWeeklyReportsPage: React.FC = () => {
         const data = await weeklyReportApi.getTeamReports(ledTeam._id);
         setReports(data);
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error(error);
       toast.error('Failed to load weekly reports');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   const columns: Column<WeeklyReport>[] = [
     { 

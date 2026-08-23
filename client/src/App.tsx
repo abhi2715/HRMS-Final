@@ -1,13 +1,4 @@
-import { OrgAnalyticsPage } from './pages/analytics/OrgAnalyticsPage';
-import { TeamAnalyticsPage } from './pages/analytics/TeamAnalyticsPage';
-import { EmployeeAnalyticsPage } from './pages/analytics/EmployeeAnalyticsPage';
-import { TeamWeeklyReportsPage } from './pages/team-lead/TeamWeeklyReportsPage';
-import { WeeklyReportSubmitPage } from './pages/team-lead/WeeklyReportSubmitPage';
-import { CeoWeeklyReportsPage } from './pages/ceo/CeoWeeklyReportsPage';
-import { MyPayrollPage } from './pages/employee/MyPayrollPage';
-import { AdminPayrollPage } from './pages/admin/AdminPayrollPage';
-import { CeoPayrollDashboard } from './pages/ceo/CeoPayrollDashboard';
-import { useEffect } from 'react';
+import React, { useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { initializeAuth } from './store/slices/authSlice';
@@ -18,22 +9,34 @@ import { Permission } from './utils/permissions';
 import AppLayout from './layouts/AppLayout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import RoleGuard from './components/auth/RoleGuard';
-import DashboardRouter from './pages/DashboardRouter';
-import LoginPage from './pages/LoginPage';
-import EmployeesPage from './pages/admin/EmployeesPage';
-import TeamsPage from './pages/admin/TeamsPage';
-import OrganizationPage from './pages/admin/OrganizationPage';
-import TasksPage from './pages/ceo/TasksPage';
-import TeamMembersPage from './pages/team-lead/TeamMembersPage';
-import MyProfilePage from './pages/employee/MyProfilePage';
-import MyAttendancePage from './pages/employee/MyAttendancePage';
-import TeamAttendancePage from './pages/team-lead/TeamAttendancePage';
-import AdminAttendancePage from './pages/admin/AdminAttendancePage';
-import CeoAttendancePage from './pages/ceo/CeoAttendancePage';
-import AuditLogsPage from './pages/admin/AuditLogsPage';
-import MyDailyProgressPage from './pages/employee/MyDailyProgressPage';
-import TeamDailyProgressPage from './pages/team-lead/TeamDailyProgressPage';
-import CeoDailyProgressPage from './pages/ceo/CeoDailyProgressPage';
+
+const OrgAnalyticsPage = lazy(() => import('./pages/analytics/OrgAnalyticsPage').then(m => ({ default: m.OrgAnalyticsPage })));
+const TeamAnalyticsPage = lazy(() => import('./pages/analytics/TeamAnalyticsPage').then(m => ({ default: m.TeamAnalyticsPage })));
+const EmployeeAnalyticsPage = lazy(() => import('./pages/analytics/EmployeeAnalyticsPage').then(m => ({ default: m.EmployeeAnalyticsPage })));
+const TeamWeeklyReportsPage = lazy(() => import('./pages/team-lead/TeamWeeklyReportsPage').then(m => ({ default: m.TeamWeeklyReportsPage })));
+const WeeklyReportSubmitPage = lazy(() => import('./pages/team-lead/WeeklyReportSubmitPage').then(m => ({ default: m.WeeklyReportSubmitPage })));
+const CeoWeeklyReportsPage = lazy(() => import('./pages/ceo/CeoWeeklyReportsPage').then(m => ({ default: m.CeoWeeklyReportsPage })));
+const MyPayrollPage = lazy(() => import('./pages/employee/MyPayrollPage').then(m => ({ default: m.MyPayrollPage })));
+const AdminPayrollPage = lazy(() => import('./pages/admin/AdminPayrollPage').then(m => ({ default: m.AdminPayrollPage })));
+const CeoPayrollDashboard = lazy(() => import('./pages/ceo/CeoPayrollDashboard').then(m => ({ default: m.CeoPayrollDashboard })));
+
+const DashboardRouter = lazy(() => import('./pages/DashboardRouter'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const EmployeesPage = lazy(() => import('./pages/admin/EmployeesPage'));
+const TeamsPage = lazy(() => import('./pages/admin/TeamsPage'));
+const OrganizationPage = lazy(() => import('./pages/admin/OrganizationPage'));
+const TasksPage = lazy(() => import('./pages/ceo/TasksPage'));
+const TeamMembersPage = lazy(() => import('./pages/team-lead/TeamMembersPage'));
+const MyProfilePage = lazy(() => import('./pages/employee/MyProfilePage'));
+const MyAttendancePage = lazy(() => import('./pages/employee/MyAttendancePage'));
+const TeamAttendancePage = lazy(() => import('./pages/team-lead/TeamAttendancePage'));
+const AdminAttendancePage = lazy(() => import('./pages/admin/AdminAttendancePage'));
+const CeoAttendancePage = lazy(() => import('./pages/ceo/CeoAttendancePage'));
+const AuditLogsPage = lazy(() => import('./pages/admin/AuditLogsPage').then(m => ({ default: m.AuditLogsPage })));
+
+const MyDailyProgressPage = lazy(() => import('./pages/employee/MyDailyProgressPage'));
+const TeamDailyProgressPage = lazy(() => import('./pages/team-lead/TeamDailyProgressPage'));
+const CeoDailyProgressPage = lazy(() => import('./pages/ceo/CeoDailyProgressPage'));
 
 /**
  * App Root.
@@ -74,34 +77,34 @@ function App() {
           }
         >
           {/* Role-based Dashboard */}
-          <Route path="/" element={<DashboardRouter />} />
+          <Route path="/" element={<Suspense fallback={<div>Loading...</div>}><DashboardRouter /></Suspense>} />
 
           {/* Feature Routes */}
-          <Route path={ROUTES.EMPLOYEES} element={<EmployeesPage />} />
-          <Route path={ROUTES.TEAMS} element={<TeamsPage />} />
-          <Route path={ROUTES.AUDIT_LOGS} element={<AuditLogsPage />} />
-          <Route path={ROUTES.ORGANIZATION} element={<OrganizationPage />} />
-          <Route path={ROUTES.TASKS} element={<TasksPage />} />
-          <Route path="/team-members" element={<TeamMembersPage />} />
-          <Route path="/profile" element={<MyProfilePage />} />
-          <Route path={ROUTES.ATTENDANCE} element={<MyAttendancePage />} />
-          <Route path={ROUTES.ATTENDANCE_TEAM} element={<TeamAttendancePage />} />
-          <Route path={ROUTES.ATTENDANCE_ORG} element={<AdminAttendancePage />} />
-          <Route path={ROUTES.ATTENDANCE_ANALYTICS} element={<CeoAttendancePage />} />
-          <Route path={ROUTES.DAILY_PROGRESS} element={<MyDailyProgressPage />} />
-          <Route path={ROUTES.DAILY_PROGRESS_TEAM} element={<TeamDailyProgressPage />} />
-          <Route path={ROUTES.DAILY_PROGRESS_ORG} element={<CeoDailyProgressPage />} />
+          <Route path={ROUTES.EMPLOYEES} element={<Suspense fallback={<div>Loading...</div>}><EmployeesPage /></Suspense>} />
+          <Route path={ROUTES.TEAMS} element={<Suspense fallback={<div>Loading...</div>}><TeamsPage /></Suspense>} />
+          <Route path={ROUTES.AUDIT_LOGS} element={<Suspense fallback={<div>Loading...</div>}><AuditLogsPage /></Suspense>} />
+          <Route path={ROUTES.ORGANIZATION} element={<Suspense fallback={<div>Loading...</div>}><OrganizationPage /></Suspense>} />
+          <Route path={ROUTES.TASKS} element={<Suspense fallback={<div>Loading...</div>}><TasksPage /></Suspense>} />
+          <Route path="/team-members" element={<Suspense fallback={<div>Loading...</div>}><TeamMembersPage /></Suspense>} />
+          <Route path="/profile" element={<Suspense fallback={<div>Loading...</div>}><MyProfilePage /></Suspense>} />
+          <Route path={ROUTES.ATTENDANCE} element={<Suspense fallback={<div>Loading...</div>}><MyAttendancePage /></Suspense>} />
+          <Route path={ROUTES.ATTENDANCE_TEAM} element={<Suspense fallback={<div>Loading...</div>}><TeamAttendancePage /></Suspense>} />
+          <Route path={ROUTES.ATTENDANCE_ORG} element={<Suspense fallback={<div>Loading...</div>}><AdminAttendancePage /></Suspense>} />
+          <Route path={ROUTES.ATTENDANCE_ANALYTICS} element={<Suspense fallback={<div>Loading...</div>}><CeoAttendancePage /></Suspense>} />
+          <Route path={ROUTES.DAILY_PROGRESS} element={<Suspense fallback={<div>Loading...</div>}><MyDailyProgressPage /></Suspense>} />
+          <Route path={ROUTES.DAILY_PROGRESS_TEAM} element={<Suspense fallback={<div>Loading...</div>}><TeamDailyProgressPage /></Suspense>} />
+          <Route path={ROUTES.DAILY_PROGRESS_ORG} element={<Suspense fallback={<div>Loading...</div>}><CeoDailyProgressPage /></Suspense>} />
           
-          <Route path={ROUTES.PAYROLL} element={<RoleGuard permission={Permission.PAYROLL_VIEW_SELF}><MyPayrollPage /></RoleGuard>} />
-           <Route path={ROUTES.PAYROLL_ADMIN} element={<RoleGuard permission={Permission.PAYROLL_MANAGE}><AdminPayrollPage /></RoleGuard>} />
-           <Route path={ROUTES.PAYROLL_ORG} element={<RoleGuard permission={Permission.PAYROLL_VIEW_ORGANIZATION}><CeoPayrollDashboard /></RoleGuard>} />
-          <Route path={ROUTES.ANALYTICS_ORG} element={<RoleGuard permission={Permission.ANALYTICS_VIEW_ORGANIZATION}><OrgAnalyticsPage /></RoleGuard>} />
-          <Route path={ROUTES.ANALYTICS_TEAM} element={<RoleGuard permission={Permission.ANALYTICS_VIEW_TEAM}><TeamAnalyticsPage /></RoleGuard>} />
-          <Route path={ROUTES.ANALYTICS_ME} element={<RoleGuard permission={Permission.ANALYTICS_VIEW_SELF}><EmployeeAnalyticsPage /></RoleGuard>} />
+          <Route path={ROUTES.PAYROLL} element={<RoleGuard permission={Permission.PAYROLL_VIEW_SELF}><Suspense fallback={<div>Loading...</div>}><MyPayrollPage /></Suspense></RoleGuard>} />
+           <Route path={ROUTES.PAYROLL_ADMIN} element={<RoleGuard permission={Permission.PAYROLL_MANAGE}><Suspense fallback={<div>Loading...</div>}><AdminPayrollPage /></Suspense></RoleGuard>} />
+           <Route path={ROUTES.PAYROLL_ORG} element={<RoleGuard permission={Permission.PAYROLL_VIEW_ORGANIZATION}><Suspense fallback={<div>Loading...</div>}><CeoPayrollDashboard /></Suspense></RoleGuard>} />
+          <Route path={ROUTES.ANALYTICS_ORG} element={<RoleGuard permission={Permission.ANALYTICS_VIEW_ORGANIZATION}><Suspense fallback={<div>Loading...</div>}><OrgAnalyticsPage /></Suspense></RoleGuard>} />
+          <Route path={ROUTES.ANALYTICS_TEAM} element={<RoleGuard permission={Permission.ANALYTICS_VIEW_TEAM}><Suspense fallback={<div>Loading...</div>}><TeamAnalyticsPage /></Suspense></RoleGuard>} />
+          <Route path={ROUTES.ANALYTICS_ME} element={<RoleGuard permission={Permission.ANALYTICS_VIEW_SELF}><Suspense fallback={<div>Loading...</div>}><EmployeeAnalyticsPage /></Suspense></RoleGuard>} />
           
-          <Route path={ROUTES.WEEKLY_REPORTS} element={<RoleGuard permission={Permission.WEEKLY_REPORT_SUBMIT}><TeamWeeklyReportsPage /></RoleGuard>} />
-           <Route path={ROUTES.WEEKLY_REPORTS_SUBMIT} element={<RoleGuard permission={Permission.WEEKLY_REPORT_SUBMIT}><WeeklyReportSubmitPage /></RoleGuard>} />
-           <Route path={ROUTES.WEEKLY_REPORTS_ORG} element={<RoleGuard permission={Permission.WEEKLY_REPORT_VIEW}><CeoWeeklyReportsPage /></RoleGuard>} />
+          <Route path={ROUTES.WEEKLY_REPORTS} element={<RoleGuard permission={Permission.WEEKLY_REPORT_SUBMIT}><Suspense fallback={<div>Loading...</div>}><TeamWeeklyReportsPage /></Suspense></RoleGuard>} />
+           <Route path={ROUTES.WEEKLY_REPORTS_SUBMIT} element={<RoleGuard permission={Permission.WEEKLY_REPORT_SUBMIT}><Suspense fallback={<div>Loading...</div>}><WeeklyReportSubmitPage /></Suspense></RoleGuard>} />
+           <Route path={ROUTES.WEEKLY_REPORTS_ORG} element={<RoleGuard permission={Permission.WEEKLY_REPORT_VIEW}><Suspense fallback={<div>Loading...</div>}><CeoWeeklyReportsPage /></Suspense></RoleGuard>} />
           <Route path={ROUTES.REPORTS} element={<div style={{ padding: '2rem' }}><h1>Reports Module (Coming Soon)</h1></div>} />
         </Route>
 

@@ -40,7 +40,8 @@ export const AdminPayrollPage: React.FC = () => {
       setIsLoading(true);
       const data = await payrollApi.getOrgPayrollSummary();
       setSummary(data);
-    } catch (error) {
+    } catch (error: any) {
+      console.error(error);
       toast.error('Failed to load organization payroll summary');
     } finally {
       setIsLoading(false);
@@ -54,7 +55,8 @@ export const AdminPayrollPage: React.FC = () => {
       setIsHistoryLoading(true);
       const data = await payrollApi.getEmployeeSalaryHistory(employee._id || employee.id);
       setEmployeeHistory(data.records);
-    } catch (error) {
+    } catch (error: any) {
+      console.error(error);
       toast.error('Failed to load employee salary history');
     } finally {
       setIsHistoryLoading(false);

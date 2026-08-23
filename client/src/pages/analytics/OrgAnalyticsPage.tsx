@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Card } from '../../components/ui/Card/Card';
 import { Input } from '../../components/ui/Input/Input';
@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 import { format, subDays } from 'date-fns';
 import { BarChart, Users, CheckCircle, Clock, AlertTriangle, Calendar } from 'lucide-react';
 
-export const OrgAnalyticsPage: React.FC = () => {
+export const OrgAnalyticsPage: React.FC = React.memo(() => {
   const [analytics, setAnalytics] = useState<OrgAnalytics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -17,7 +17,7 @@ export const OrgAnalyticsPage: React.FC = () => {
   const [startDate, setStartDate] = useState(format(subDays(new Date(), 30), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
 
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     try {
       setIsLoading(true);
       const data = await analyticsApi.getOrganizationAnalytics(startDate, endDate);
@@ -27,10 +27,11 @@ export const OrgAnalyticsPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [startDate, endDate]);
 
   useEffect(() => {
     fetchAnalytics();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleFilter = (e: React.FormEvent) => {
@@ -205,4 +206,4 @@ export const OrgAnalyticsPage: React.FC = () => {
       )}
     </div>
   );
-};
+});

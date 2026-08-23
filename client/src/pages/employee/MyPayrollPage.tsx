@@ -22,7 +22,8 @@ export const MyPayrollPage: React.FC = () => {
       setIsLoading(true);
       const data = await payrollApi.getMySalaryHistory();
       setRecords(data);
-    } catch (error) {
+    } catch (error: any) {
+      console.error(error);
       toast.error('Failed to load salary history');
     } finally {
       setIsLoading(false);

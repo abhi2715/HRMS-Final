@@ -71,7 +71,8 @@ export default function TasksPage() {
            setTeamMembers(res.data);
         }
       }
-    } catch (e) {
+    } catch (e: any) {
+      console.error(e);
       console.error('Failed to load assignees');
     }
   }, [user]);
@@ -85,7 +86,8 @@ export default function TasksPage() {
         tags: tagFilter || undefined
       });
       setTasks(res.data);
-    } catch (error) {
+    } catch (error: any) {
+      console.error(error);
       addToast({ type: 'error', title: 'Failed to load tasks' });
     } finally {
       setLoading(false);
@@ -174,6 +176,7 @@ export default function TasksPage() {
       setCommentText('');
       fetchTasks();
     } catch (error: any) {
+      console.error(error);
       addToast({ type: 'error', title: 'Failed to add comment' });
     }
   };
@@ -187,6 +190,7 @@ export default function TasksPage() {
       }
       addToast({ type: 'success', title: 'Task status updated' });
     } catch (error: any) {
+      console.error(error);
       addToast({ type: 'error', title: 'Failed to update status' });
     }
   };

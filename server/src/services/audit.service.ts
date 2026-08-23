@@ -1,24 +1,33 @@
+import { Request } from 'express';
 import mongoose from 'mongoose';
 import AuditLog, { AuditAction } from '../models/AuditLog.model';
 
 export interface AuditLogOptions {
+  actor: string | mongoose.Types.ObjectId;
   action: AuditAction | string;
-  performedBy: string | mongoose.Types.ObjectId;
-  targetUser?: string | mongoose.Types.ObjectId | null;
-  targetTeam?: string | mongoose.Types.ObjectId | null;
-  targetTask?: string | mongoose.Types.ObjectId | null;
-  details?: Record<string, any>;
+  entity: string;
+  entityId?: string | mongoose.Types.ObjectId | null;
+  metadata?: Record<string, any>;
 }
 
-export const logAudit = async (options: AuditLogOptions): Promise<void> => {
+export const logAudit = async (options: AuditLogOptions, req?: Request): Promise<void> => {
   try {
+    let ipAddress: string | undefined;
+    let userAgent: string | undefined;
+
+    if (req) {
+      ipAddress = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress;
+      userAgent = req.get('User-Agent');
+    }
+
     await AuditLog.create({
+      actor: options.actor,
       action: options.action,
-      performedBy: options.performedBy,
-      targetUser: options.targetUser,
-      targetTeam: options.targetTeam,
-      targetTask: options.targetTask,
-      details: options.details,
+      entity: options.entity,
+      entityId: options.entityId,
+      metadata: options.metadata,
+      ipAddress,
+      userAgent
     });
   } catch (error) {
     // In production, we'd want to use a robust logger like Pino or Winston.

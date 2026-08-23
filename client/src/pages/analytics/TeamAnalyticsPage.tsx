@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Card } from '../../components/ui/Card/Card';
 import { Input } from '../../components/ui/Input/Input';
@@ -13,7 +13,7 @@ import toast from 'react-hot-toast';
 import { format, subDays } from 'date-fns';
 import { CheckCircle, Clock, AlertTriangle, Users } from 'lucide-react';
 
-export const TeamAnalyticsPage: React.FC = () => {
+export const TeamAnalyticsPage: React.FC = React.memo(() => {
   const [analytics, setAnalytics] = useState<TeamAnalytics | null>(null);
   const [myTeam, setMyTeam] = useState<Team | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -61,11 +61,9 @@ export const TeamAnalyticsPage: React.FC = () => {
     fetchAnalytics();
   };
 
-  if (isLoading) {
-    return <div className="p-8 text-center text-gray-500">Loading team analytics...</div>;
-  }
 
-  const columns: Column<TeamAnalytics['memberContribution'][0]>[] = [
+
+  const columns: Column<TeamAnalytics['memberContribution'][0]>[] = useMemo(() => [
     {
       key: 'name',
       header: 'Team Member',
@@ -104,7 +102,11 @@ export const TeamAnalyticsPage: React.FC = () => {
         )
       }
     }
-  ];
+  ], [analytics]);
+
+  if (isLoading) {
+    return <div className="p-8 text-center text-gray-500">Loading team analytics...</div>;
+  }
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
@@ -201,4 +203,4 @@ export const TeamAnalyticsPage: React.FC = () => {
       )}
     </div>
   );
-};
+});

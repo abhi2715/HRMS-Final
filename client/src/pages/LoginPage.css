@@ -233,6 +233,10 @@
   height: 32px;
   color: var(--color-text-tertiary);
   border-radius: var(--radius-sm);
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
   transition: color var(--transition-fast);
 }
 

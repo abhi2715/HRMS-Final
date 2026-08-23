@@ -21,7 +21,8 @@ export const CeoPayrollDashboard: React.FC = () => {
       setIsLoading(true);
       const data = await payrollApi.getOrgPayrollSummary();
       setSummary(data);
-    } catch (error) {
+    } catch (error: any) {
+      console.error(error);
       toast.error('Failed to load organization payroll summary');
     } finally {
       setIsLoading(false);
