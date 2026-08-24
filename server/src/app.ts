@@ -13,6 +13,7 @@ import { sendError } from './utils/response';
 import routes from './routes';
 
 const app = express();
+app.set('trust proxy', 1); // Trust first proxy (Render load balancer)
 
 // ── Security ────────────────────────────────────────────────
 app.use(helmet());

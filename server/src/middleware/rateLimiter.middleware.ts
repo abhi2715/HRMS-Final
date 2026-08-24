@@ -15,10 +15,10 @@ export const apiLimiter = rateLimit({
   },
 });
 
-// Auth API Limiter: 10 requests per 15 minutes per IP (Brute-force protection)
+// Auth API Limiter: 100 requests per 15 minutes per IP (Brute-force protection)
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: isTest ? 0 : 10, // Limit each IP to 10 requests per `window`
+  max: isTest ? 0 : 100, // Limit each IP to 100 requests per `window`
   skip: () => isTest,
   standardHeaders: true,
   legacyHeaders: false,
