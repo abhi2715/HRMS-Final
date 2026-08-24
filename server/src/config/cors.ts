@@ -10,7 +10,7 @@ export const corsOptions: cors.CorsOptions = {
       return callback(null, true);
     }
 
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
       callback(null, true);
     } else {
       callback(new Error(`Origin ${origin} not allowed by CORS`));
