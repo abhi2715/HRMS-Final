@@ -33,8 +33,10 @@ export const loginThunk = createAsyncThunk(
   async (credentials: LoginRequest, { rejectWithValue }) => {
     try {
       const response = await authApi.login(credentials);
-      const { user, accessToken } = response.data.data;
+      // @ts-ignore
+      const { user, accessToken, refreshToken } = response.data.data;
       setAccessToken(accessToken);
+      if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
       return user;
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
@@ -49,9 +51,11 @@ export const logoutThunk = createAsyncThunk(
     try {
       await authApi.logout();
       setAccessToken(null);
+      localStorage.removeItem('refreshToken');
     } catch (error: unknown) {
       // Clear token even if API call fails
       setAccessToken(null);
+      localStorage.removeItem('refreshToken');
       const err = error as { response?: { data?: { message?: string } } };
       return rejectWithValue(err.response?.data?.message || 'Logout failed');
     }
@@ -80,12 +84,16 @@ export const initializeAuth = createAsyncThunk(
   'auth/initialize',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await authApi.refresh();
-      const { user, accessToken } = response.data.data;
+      const storedRefreshToken = localStorage.getItem('refreshToken');
+      const response = await authApi.refresh(storedRefreshToken ? { refreshToken: storedRefreshToken } : undefined);
+      // @ts-ignore
+      const { user, accessToken, refreshToken } = response.data.data;
       setAccessToken(accessToken);
+      if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
       return user;
     } catch {
       setAccessToken(null);
+      localStorage.removeItem('refreshToken');
       return rejectWithValue('Not authenticated');
     }
   }

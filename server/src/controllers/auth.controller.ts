@@ -29,6 +29,7 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
     sendSuccess(res, {
       user: result.user,
       accessToken: result.tokens.accessToken,
+      refreshToken: result.tokens.refreshToken,
     }, 'Login successful');
   } catch (error) {
     next(error);
@@ -38,7 +39,7 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
 // ── Refresh Token ──────────────────────────────────────────────
 export async function refresh(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const currentRefreshToken = req.cookies?.refreshToken;
+    const currentRefreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
     if (!currentRefreshToken) {
       res.status(401).json({
         success: false,
@@ -56,6 +57,7 @@ export async function refresh(req: Request, res: Response, next: NextFunction): 
     sendSuccess(res, {
       user: result.user,
       accessToken: result.tokens.accessToken,
+      refreshToken: result.tokens.refreshToken,
     }, 'Token refreshed');
   } catch (error) {
     // Clear the invalid cookie

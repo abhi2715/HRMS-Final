@@ -64,6 +64,11 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
+    // Do not intercept 401s for login or refresh endpoints themselves!
+    if (originalRequest.url?.includes('/auth/refresh') || originalRequest.url?.includes('/auth/login')) {
+      return Promise.reject(error);
+    }
+
     // If 401 and we haven't already tried to refresh
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
@@ -83,9 +88,10 @@ api.interceptors.response.use(
 
       try {
         // Attempt token refresh
+        const storedRefreshToken = localStorage.getItem('refreshToken');
         const response = await axios.post(
           `${config.apiBaseUrl}/auth/refresh`,
-          {},
+          storedRefreshToken ? { refreshToken: storedRefreshToken } : {},
           { withCredentials: true }
         );
 
