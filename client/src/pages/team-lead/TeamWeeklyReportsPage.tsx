@@ -19,9 +19,7 @@ export const TeamWeeklyReportsPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+
 
   const fetchData = useCallback(async () => {
     try {
@@ -38,12 +36,15 @@ export const TeamWeeklyReportsPage: React.FC = () => {
         setReports(data);
       }
     } catch (error: any) {
-      console.error(error);
-      toast.error('Failed to load weekly reports');
+      toast.error(error.response?.data?.message || 'Failed to load weekly reports');
     } finally {
       setIsLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const columns: Column<WeeklyReport>[] = [
     { 
