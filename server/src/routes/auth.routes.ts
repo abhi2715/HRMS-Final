@@ -10,7 +10,7 @@ import { UserRole } from '../../../shared/types/enums';
 const router = Router();
 
 // Strict rate limiter for login
-const loginLimiter = process.env.NODE_ENV === 'test' ? (req: any, res: any, next: any) => next() : rateLimit({
+const loginLimiter = (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') ? (req: any, res: any, next: any) => next() : rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 10, // Limit each IP to 10 login requests per window
   message: {
@@ -22,7 +22,7 @@ const loginLimiter = process.env.NODE_ENV === 'test' ? (req: any, res: any, next
 });
 
 // General rate limiter for auth endpoints
-const authLimiter = process.env.NODE_ENV === 'test' ? (req: any, res: any, next: any) => next() : rateLimit({
+const authLimiter = (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') ? (req: any, res: any, next: any) => next() : rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 100, // Limit each IP to 100 requests per window
   message: {

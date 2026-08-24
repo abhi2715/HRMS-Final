@@ -18,16 +18,24 @@ export const getOrganizationStats = async (req: Request, res: Response) => {
       AuditLog.find()
         .sort({ createdAt: -1 })
         .limit(10)
-        .populate('performedBy', 'firstName lastName')
-        .populate('targetUser', 'firstName lastName')
-        .populate('targetTeam', 'name'),
+        .populate('actor', 'firstName lastName')
     ]);
+
+    // Map audit logs to frontend expected format
+    const formattedActivity = recentActivity.map((log: any) => ({
+      _id: log._id,
+      action: log.action,
+      performedBy: log.actor,
+      createdAt: log.createdAt,
+      // Attempt to resolve target if entityId is present, though we might not have it populated
+      details: log.metadata
+    }));
 
     res.json({
       totalEmployees,
       totalTeams,
       activeUsers,
-      recentActivity,
+      recentActivity: formattedActivity,
     });
   } catch (error: any) {
     res.status(500).json({ message: 'Error fetching organization stats', error: error.message });

@@ -38,6 +38,10 @@ const MyDailyProgressPage = lazy(() => import('./pages/employee/MyDailyProgressP
 const TeamDailyProgressPage = lazy(() => import('./pages/team-lead/TeamDailyProgressPage'));
 const CeoDailyProgressPage = lazy(() => import('./pages/ceo/CeoDailyProgressPage'));
 
+const MyLeavesPage = lazy(() => import('./pages/employee/MyLeavesPage').then(m => ({ default: m.MyLeavesPage })));
+const TeamLeavesPage = lazy(() => import('./pages/team-lead/TeamLeavesPage').then(m => ({ default: m.TeamLeavesPage })));
+const AdminLeaveConfigPage = lazy(() => import('./pages/admin/AdminLeaveConfigPage').then(m => ({ default: m.AdminLeaveConfigPage })));
+
 /**
  * App Root.
  *
@@ -105,6 +109,9 @@ function App() {
           <Route path={ROUTES.WEEKLY_REPORTS} element={<RoleGuard permission={Permission.WEEKLY_REPORT_SUBMIT}><Suspense fallback={<div>Loading...</div>}><TeamWeeklyReportsPage /></Suspense></RoleGuard>} />
            <Route path={ROUTES.WEEKLY_REPORTS_SUBMIT} element={<RoleGuard permission={Permission.WEEKLY_REPORT_SUBMIT}><Suspense fallback={<div>Loading...</div>}><WeeklyReportSubmitPage /></Suspense></RoleGuard>} />
            <Route path={ROUTES.WEEKLY_REPORTS_ORG} element={<RoleGuard permission={Permission.WEEKLY_REPORT_VIEW}><Suspense fallback={<div>Loading...</div>}><CeoWeeklyReportsPage /></Suspense></RoleGuard>} />
+          <Route path={ROUTES.LEAVE_MY} element={<RoleGuard permission={Permission.LEAVE_VIEW_SELF}><Suspense fallback={<div>Loading...</div>}><MyLeavesPage /></Suspense></RoleGuard>} />
+          <Route path={ROUTES.LEAVE_TEAM} element={<RoleGuard permission={Permission.LEAVE_VIEW_TEAM}><Suspense fallback={<div>Loading...</div>}><TeamLeavesPage /></Suspense></RoleGuard>} />
+          <Route path={ROUTES.LEAVE_ADMIN} element={<RoleGuard permission={Permission.LEAVE_MANAGE_TYPES}><Suspense fallback={<div>Loading...</div>}><AdminLeaveConfigPage /></Suspense></RoleGuard>} />
           <Route path={ROUTES.REPORTS} element={<div style={{ padding: '2rem' }}><h1>Reports Module (Coming Soon)</h1></div>} />
         </Route>
 

@@ -41,7 +41,7 @@ export const getAttritionRisk = async (req: Request, res: Response) => {
       risks.push({
         employeeId: empId,
         name: `${emp.firstName} ${emp.lastName}`,
-        department: emp.department || 'Engineering',
+        department: (emp as any).department || 'Engineering',
         riskScore,
         riskLevel,
         factors: [

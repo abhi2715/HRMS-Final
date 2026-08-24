@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import { chatWithAI } from '../controllers/ai.controller';
-import { protect } from '../middleware/auth.middleware';
+import { authenticate } from '../middleware/auth.middleware';
 
 const router = Router();
 
 // Only authenticated users can chat with AI
-router.post('/chat', protect, chatWithAI);
+router.post('/chat', authenticate, chatWithAI);
 
 export default router;

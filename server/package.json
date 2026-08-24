@@ -11,7 +11,7 @@
     "lint": "eslint src/ --ext .ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "seed": "ts-node src/seed/populate.ts"
+    "seed": "tsx src/seed/populate.ts"
   },
   "dependencies": {
     "@langchain/core": "^1.2.9",
