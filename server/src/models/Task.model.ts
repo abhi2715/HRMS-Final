@@ -186,6 +186,8 @@ taskSchema.index({ parentTask: 1 });
 taskSchema.index({ team: 1, completedAt: 1 });
 taskSchema.index({ assignedTo: 1, completedAt: 1 });
 taskSchema.index({ createdAt: 1 });
+taskSchema.index({ completedAt: 1 });
+taskSchema.index({ status: 1, createdAt: 1 });
 
 const Task = mongoose.models.Task || mongoose.model<ITaskDocument, ITaskModel>('Task', taskSchema);
 

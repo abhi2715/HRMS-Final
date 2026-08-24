@@ -75,5 +75,9 @@ const leaveSchema = new Schema<ILeaveDocument>(
   }
 );
 
+leaveSchema.index({ status: 1, startDate: 1, endDate: 1 });
+leaveSchema.index({ startDate: 1 });
+leaveSchema.index({ endDate: 1 });
+
 const Leave = mongoose.models.Leave || mongoose.model<ILeaveDocument, ILeaveModel>('Leave', leaveSchema);
 export default Leave;
