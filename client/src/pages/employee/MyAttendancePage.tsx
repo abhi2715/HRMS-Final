@@ -17,6 +17,15 @@ export default function MyAttendancePage() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const { addToast } = useToast();
 
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   const fetchAttendance = useCallback(async () => {
     try {
       setLoading(true);
@@ -128,21 +137,33 @@ export default function MyAttendancePage() {
   const hasCheckedIn = !!todayRecord;
   const hasCheckedOut = !!todayRecord?.checkOut;
 
+  const renderStatusMessage = () => {
+    if (hasCheckedOut) {
+      return "You have checked out for the day. Have a great evening!";
+    }
+    if (hasCheckedIn && todayRecord?.checkIn) {
+      const diffInSeconds = Math.max(0, Math.floor((currentTime.getTime() - new Date(todayRecord.checkIn).getTime()) / 1000));
+      const hours = Math.floor(diffInSeconds / 3600);
+      const minutes = Math.floor((diffInSeconds % 3600) / 60);
+      const seconds = diffInSeconds % 60;
+      return `You are currently checked in. Duration: ${hours}h ${minutes}m ${seconds}s. Don't forget to check out when you finish work.`;
+    }
+    return "You haven't checked in yet today.";
+  };
+
   return (
     <div className="page-container">
       <PageHeader title="My Attendance" />
 
       {/* Action Card */}
       <div style={{ backgroundColor: 'var(--color-surface)', padding: '32px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)', marginBottom: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-        <h3 style={{ fontSize: 'var(--text-xl)', marginBottom: '8px' }}>
-          {new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+        <h3 style={{ fontSize: 'var(--text-xl)', marginBottom: '8px', fontFamily: 'monospace' }}>
+          {currentTime.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          {' • '}
+          {currentTime.toLocaleTimeString()}
         </h3>
         <p style={{ color: 'var(--color-text-secondary)', marginBottom: '24px' }}>
-          {hasCheckedOut 
-            ? "You have checked out for the day. Have a great evening!" 
-            : hasCheckedIn 
-              ? "You are currently checked in. Don't forget to check out when you finish work." 
-              : "You haven't checked in yet today."}
+          {renderStatusMessage()}
         </p>
 
         <div style={{ display: 'flex', gap: '16px' }}>
