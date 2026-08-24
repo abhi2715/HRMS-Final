@@ -108,8 +108,10 @@ api.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
         setAccessToken(null);
-        // Redirect to login if refresh fails
-        window.location.href = '/login';
+        // Redirect to login if refresh fails and we are not already there
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
