@@ -1,6 +1,7 @@
 import { ChatOpenAI } from '@langchain/openai';
 import { HumanMessage, SystemMessage } from '@langchain/core/messages';
-import { createReactAgent } from '@langchain/langgraph/dist/prebuilt/index.js';
+// @ts-ignore
+import { createReactAgent } from '@langchain/langgraph/prebuilt';
 import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
 import Task from '../models/Task.model';
