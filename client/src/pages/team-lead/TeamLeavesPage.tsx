@@ -9,7 +9,7 @@ import { leaveApi } from '../../services/leaveApi';
 import type { LeaveRequest } from '../../services/leaveApi';
 import { LeaveStatus } from '../../types/enums';
 import { format } from 'date-fns';
-import { Check, X } from 'lucide-react';
+import { Check, X, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -88,6 +88,18 @@ export const TeamLeavesPage: React.FC = () => {
       ) : null,
     }
   ];
+
+  if (!user?.team) {
+    return (
+      <div className="page-container">
+        <PageHeader title="Team Leave Requests" />
+        <div style={{ padding: '48px', textAlign: 'center', backgroundColor: 'var(--color-surface)', borderRadius: 'var(--radius-lg)' }}>
+          <AlertCircle size={48} style={{ color: 'var(--color-text-tertiary)', margin: '0 auto 16px' }} />
+          <p style={{ color: 'var(--color-text-secondary)' }}>You are not assigned to manage any team.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
