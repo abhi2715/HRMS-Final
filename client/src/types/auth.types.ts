@@ -45,6 +45,7 @@ export interface RefreshResponse {
   data: {
     user: User;
     accessToken: string;
+    refreshToken?: string;
   };
 }
 
