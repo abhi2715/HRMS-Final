@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, X, Send, Bot, User, Loader2 } from 'lucide-react';
+import { X, Send, Bot, User, Loader2 } from 'lucide-react';
 import api from '../../services/api';
 import './AICopilot.css';
 
@@ -73,7 +73,7 @@ export const AICopilot: React.FC = () => {
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Toggle AI Copilot"
       >
-        {isOpen ? <X size={24} /> : <MessageSquare size={24} />}
+        {isOpen ? <X size={24} /> : <Bot size={28} />}
       </button>
 
       {isOpen && (
